@@ -86,12 +86,10 @@ class KtmGeneratorService
             }
         }
 
-        // Generate output path
-        $yearFolder = $this->academicYear
-            ? str_replace('/', '-', $this->academicYear->code)
-            : 'general';
+        // Generate output path - use template name as folder
+        $templateFolder = \Illuminate\Support\Str::slug($this->template->name);
 
-        $outputDir = "ktm/{$yearFolder}";
+        $outputDir = "ktm/{$templateFolder}";
         $filename = "{$student->nim}.png";
         $outputPath = "{$outputDir}/{$filename}";
 

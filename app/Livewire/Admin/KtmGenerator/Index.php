@@ -93,7 +93,8 @@ class Index extends Component
                 }
             })
             ->when($this->filterAngkatan, function ($query) {
-                $query->where('angkatan', $this->filterAngkatan);
+                // Filter by first 4 digits of NIM (angkatan year)
+                $query->whereRaw('SUBSTRING(nim, 1, 4) = ?', [$this->filterAngkatan]);
             })
             ->orderBy('name');
     }
@@ -111,19 +112,22 @@ class Index extends Component
     public function getProdiListProperty()
     {
         return Student::whereNotNull('prodi')
+            ->where('prodi', '!=', '')
+            ->select('prodi')
             ->distinct()
-            ->pluck('prodi')
-            ->sort()
-            ->values();
+            ->orderBy('prodi')
+            ->pluck('prodi');
     }
 
     public function getAngkatanListProperty()
     {
-        return Student::whereNotNull('angkatan')
-            ->distinct()
+        // Extract first 4 digits from NIM as angkatan year
+        return Student::whereNotNull('nim')
+            ->where('nim', '!=', '')
+            ->selectRaw('DISTINCT SUBSTRING(nim, 1, 4) as angkatan')
+            ->orderByDesc('angkatan')
             ->pluck('angkatan')
-            ->sortDesc()
-            ->values();
+            ->filter(fn($val) => is_numeric($val) && strlen($val) == 4);
     }
 
     public function getStudentStatus($student)
@@ -213,17 +217,13 @@ class Index extends Component
 
             $service = $this->getGeneratorService();
 
-            // Fix: Handle null ktm_status properly
+            // Allow regenerate for all selected students
             $students = Student::whereIn('id', $this->selectedStudents)
-                ->where(function ($query) {
-                    $query->whereNull('ktm_status')
-                        ->orWhere('ktm_status', '!=', 'generated');
-                })
                 ->get()
                 ->all();
 
             if (empty($students)) {
-                session()->flash('error', 'Semua mahasiswa yang dipilih sudah memiliki KTM.');
+                session()->flash('error', 'Tidak ada mahasiswa yang ditemukan.');
                 return;
             }
 
@@ -253,17 +253,13 @@ class Index extends Component
         try {
             $service = $this->getGeneratorService();
 
-            // Fix: Handle null ktm_status properly
+            // Allow regenerate for all students (no ktm_status filter)
             $students = $this->getStudentsQuery()
-                ->where(function ($query) {
-                    $query->whereNull('ktm_status')
-                        ->orWhere('ktm_status', '!=', 'generated');
-                })
                 ->get()
                 ->all();
 
             if (empty($students)) {
-                session()->flash('error', 'Tidak ada mahasiswa yang perlu di-generate.');
+                session()->flash('error', 'Tidak ada mahasiswa yang ditemukan.');
                 return;
             }
 

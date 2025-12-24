@@ -38,7 +38,7 @@ class DatabaseSeeder extends Seeder
 
         // Create sample students
         $classes = ['Class A', 'Class B', 'Class C', 'Class D'];
-        $majors = ['Computer Science', 'Information Systems', 'Software Engineering', 'Data Science'];
+        $prodis = ['Computer Science', 'Information Systems', 'Software Engineering', 'Data Science'];
 
         $studentData = [];
         for ($i = 1; $i <= 1240; $i++) {
@@ -60,7 +60,7 @@ class DatabaseSeeder extends Seeder
                 'name' => 'Student ' . $i,
                 'email' => 'student' . $i . '@university.edu',
                 'class' => $classes[array_rand($classes)],
-                'major' => $majors[array_rand($majors)],
+                'prodi' => $prodis[array_rand($prodis)],
                 'photo' => null,
                 'ktm_status' => $status,
                 'ktm_generated_at' => $generatedAt,
