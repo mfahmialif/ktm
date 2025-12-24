@@ -2,7 +2,9 @@
 
 namespace App\Livewire\Admin\KtmGenerator;
 
+use App\Jobs\GenerateKtmBatchJob;
 use App\Models\AcademicYear;
+use App\Models\KtmBatchJob;
 use App\Models\KtmTemplate;
 use App\Models\Student;
 use App\Models\StudentKtmStatus;
@@ -24,6 +26,9 @@ class Index extends Component
 
     // For selecting which template to use when generating
     public $selectedTemplateId = '';
+
+    // For batch progress tracking
+    public $activeBatchId = null;
 
     protected $queryString = [
         'search' => ['except' => ''],
@@ -292,30 +297,48 @@ class Index extends Component
                 return;
             }
 
-            $service = $this->getGeneratorService();
+            $template = $this->getSelectedTemplate();
+            if (!$template) {
+                session()->flash('error', 'Silakan pilih template terlebih dahulu.');
+                return;
+            }
 
-            // Allow regenerate for all selected students
-            $students = Student::whereIn('id', $this->selectedStudents)
-                ->get()
-                ->all();
+            // Get student IDs
+            $studentIds = Student::whereIn('id', $this->selectedStudents)
+                ->pluck('id')
+                ->toArray();
 
-            if (empty($students)) {
+            if (empty($studentIds)) {
                 session()->flash('error', 'Tidak ada mahasiswa yang ditemukan.');
                 return;
             }
 
-            $results = $service->generateBatch($students);
+            // Create batch job record for progress tracking
+            $batchId = KtmBatchJob::generateBatchId();
+            $batchJob = KtmBatchJob::create([
+                'ktm_template_id' => $template->id,
+                'batch_id' => $batchId,
+                'total_students' => count($studentIds),
+                'status' => 'pending',
+            ]);
+
+            $this->activeBatchId = $batchId;
+
+            // Dispatch jobs in chunks of 50
+            $chunkSize = 50;
+            $chunks = array_chunk($studentIds, $chunkSize);
+
+            foreach ($chunks as $chunk) {
+                GenerateKtmBatchJob::dispatch($chunk, $template->id, $batchId);
+            }
 
             $this->selectedStudents = [];
             $this->selectAll = false;
 
-            $msg = $results['success'] . ' KTM berhasil di-generate.';
-            if ($results['failed'] > 0) {
-                $msg .= ' ' . $results['failed'] . ' gagal.';
-            }
-            session()->flash('success', $msg);
+            $totalStudents = count($studentIds);
+            session()->flash('success', "Proses generate {$totalStudents} KTM telah dimulai. Lihat progress di bawah.");
         } catch (\Exception $e) {
-            session()->flash('error', 'Gagal generate KTM: ' . $e->getMessage());
+            session()->flash('error', 'Gagal menjadwalkan generate KTM: ' . $e->getMessage());
         }
     }
 
@@ -328,28 +351,66 @@ class Index extends Component
     public function generateAll()
     {
         try {
-            $service = $this->getGeneratorService();
+            $template = $this->getSelectedTemplate();
+            if (!$template) {
+                session()->flash('error', 'Silakan pilih template terlebih dahulu.');
+                return;
+            }
 
-            // Allow regenerate for all students (no ktm_status filter)
-            $students = $this->getStudentsQuery()
-                ->get()
-                ->all();
+            // Get all student IDs based on current filters
+            $studentIds = $this->getStudentsQuery()
+                ->pluck('id')
+                ->toArray();
 
-            if (empty($students)) {
+            if (empty($studentIds)) {
                 session()->flash('error', 'Tidak ada mahasiswa yang ditemukan.');
                 return;
             }
 
-            $results = $service->generateBatch($students);
+            // Create batch job record for progress tracking
+            $batchId = KtmBatchJob::generateBatchId();
+            $batchJob = KtmBatchJob::create([
+                'ktm_template_id' => $template->id,
+                'batch_id' => $batchId,
+                'total_students' => count($studentIds),
+                'status' => 'pending',
+            ]);
 
-            $msg = $results['success'] . ' KTM berhasil di-generate.';
-            if ($results['failed'] > 0) {
-                $msg .= ' ' . $results['failed'] . ' gagal.';
+            $this->activeBatchId = $batchId;
+
+            // Dispatch jobs in chunks of 50
+            $chunkSize = 50;
+            $chunks = array_chunk($studentIds, $chunkSize);
+
+            foreach ($chunks as $chunk) {
+                GenerateKtmBatchJob::dispatch($chunk, $template->id, $batchId);
             }
-            session()->flash('success', $msg);
+
+            $totalStudents = count($studentIds);
+            session()->flash('success', "Proses generate {$totalStudents} KTM telah dimulai. Lihat progress di bawah.");
         } catch (\Exception $e) {
-            session()->flash('error', 'Gagal generate KTM: ' . $e->getMessage());
+            session()->flash('error', 'Gagal menjadwalkan generate KTM: ' . $e->getMessage());
         }
+    }
+
+    public function getActiveBatchProperty()
+    {
+        if ($this->activeBatchId) {
+            return KtmBatchJob::where('batch_id', $this->activeBatchId)->first();
+        }
+
+        // Check for any active batch for current template
+        $templateId = $this->filterTemplate ?: $this->selectedTemplateId;
+        if ($templateId) {
+            return KtmBatchJob::getActiveBatch((int) $templateId);
+        }
+
+        return null;
+    }
+
+    public function dismissBatch()
+    {
+        $this->activeBatchId = null;
     }
 
     public function render()
@@ -360,6 +421,7 @@ class Index extends Component
             'allTemplates' => $this->allTemplates,
             'prodiList' => $this->prodiList,
             'angkatanList' => $this->angkatanList,
+            'activeBatch' => $this->activeBatch,
         ]);
     }
 }

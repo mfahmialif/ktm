@@ -1,5 +1,5 @@
 @php use Illuminate\Support\Facades\Storage; @endphp
-<div>
+<div wire:poll.1s="$refresh">
     <!-- Flash Message - Success -->
     @if (session('success'))
     <div class="mb-4 p-4 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 flex items-center gap-2" x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 5000)" x-transition>
@@ -13,6 +13,63 @@
     <div class="mb-4 p-4 rounded-lg bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 flex items-center gap-2" x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 8000)" x-transition>
         <span class="material-symbols-outlined icon-filled text-red-500">error</span>
         {{ session('error') }}
+    </div>
+    @endif
+
+    <!-- Progress Bar for Batch Generation -->
+    @if ($activeBatch)
+    <div class="mb-4 p-4 rounded-xl bg-gradient-to-r from-blue-50 to-primary/10 dark:from-blue-900/20 dark:to-primary/20 border border-primary/30">
+        <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-3">
+                @if ($activeBatch->isRunning())
+                <span class="material-symbols-outlined text-primary animate-spin">progress_activity</span>
+                <span class="text-sm font-bold text-primary">Generating KTM...</span>
+                @else
+                <span class="material-symbols-outlined text-emerald-500">check_circle</span>
+                <span class="text-sm font-bold text-emerald-600 dark:text-emerald-400">Complete!</span>
+                @endif
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="text-right">
+                    <span class="text-2xl font-black text-primary">{{ $activeBatch->processed_students }}</span>
+                    <span class="text-sm text-gray-500">/ {{ $activeBatch->total_students }}</span>
+                </div>
+                @if (!$activeBatch->isRunning())
+                <button wire:click="dismissBatch" class="p-1 text-gray-400 hover:text-gray-600 transition-colors">
+                    <span class="material-symbols-outlined text-[18px]">close</span>
+                </button>
+                @endif
+            </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="relative h-4 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+            <div class="absolute inset-0 h-full bg-gradient-to-r from-primary to-blue-400 transition-all duration-500 ease-out rounded-full" style="width: {{ $activeBatch->progress_percentage }}%">
+            </div>
+            <div class="absolute inset-0 flex items-center justify-center">
+                <span class="text-[10px] font-bold text-white drop-shadow-sm">{{ $activeBatch->progress_percentage }}%</span>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="flex items-center gap-4 mt-3 text-xs">
+            <span class="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                <span class="material-symbols-outlined text-[14px]">check</span>
+                Sukses: {{ $activeBatch->success_count }}
+            </span>
+            @if ($activeBatch->failed_count > 0)
+            <span class="inline-flex items-center gap-1 text-red-600 dark:text-red-400">
+                <span class="material-symbols-outlined text-[14px]">error</span>
+                Gagal: {{ $activeBatch->failed_count }}
+            </span>
+            @endif
+            @if ($activeBatch->template)
+            <span class="inline-flex items-center gap-1 text-gray-500">
+                <span class="material-symbols-outlined text-[14px]">badge</span>
+                {{ $activeBatch->template->name }}
+            </span>
+            @endif
+        </div>
     </div>
     @endif
 

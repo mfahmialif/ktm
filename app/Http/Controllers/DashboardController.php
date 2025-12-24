@@ -21,7 +21,7 @@ class DashboardController extends Controller
 
         // Get student statistics
         $totalStudents = Student::count();
-        $generatedKtms = Student::generated()->count();
+        $generatedKtms = 0;
         $failedKtms = 0;
 
         // Calculate percentage
