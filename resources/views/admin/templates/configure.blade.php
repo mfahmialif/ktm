@@ -150,35 +150,45 @@ $availableJson = json_encode($availableFields ?: []);
                         </div>
                     </div>
 
-                    <div class="relative flex-1 bg-grid-pattern overflow-auto flex items-center justify-center p-8">
-                        <div class="relative bg-white shadow-2xl rounded-lg overflow-hidden shrink-0 ring-1 ring-black/5" style="width: 638px; height: 400px;">
-                            @if($template->front_template)
-                            <img src="{{ Storage::url($template->front_template) }}" alt="Card Template" class="absolute inset-0 w-full h-full object-cover pointer-events-none">
-                            @else
-                            <div class="absolute inset-0 bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
-                                <span class="material-symbols-outlined text-6xl text-blue-300">credit_card</span>
-                            </div>
-                            @endif
-
-                            <!-- Fields Preview -->
-                            <template x-for="(field, name) in fields" :key="name">
-                                <div class="absolute field-item border-2 border-dashed flex items-center justify-center px-2" :class="selectedField === name ? 'border-primary bg-primary/5' : 'border-transparent hover:border-gray-400'" :style="'left:' + field.x + 'px; top:' + field.y + 'px;' + (field.type === 'image' ? 'width:' + field.width + 'px; height:' + field.height + 'px;' : '')" @click="selectField(name)">
-                                    <template x-if="field.type === 'image'">
-                                        <div class="w-full h-full flex items-center justify-center bg-black/10 border border-gray-300">
-                                            <span class="material-symbols-outlined text-gray-500 text-3xl">person</span>
-                                        </div>
-                                    </template>
-                                    <template x-if="field.type !== 'image'">
-                                        <p class="whitespace-nowrap" :style="'font-family:' + field.font_family + ',sans-serif; font-size:' + field.font_size + 'px; color:' + field.font_color + '; font-weight:' + field.font_weight" x-text="getSample(name)"></p>
-                                    </template>
+                    @php
+                    // Calculate scale to fit preview in container (max 600px wide)
+                    $maxPreviewWidth = 600;
+                    $previewScale = min(1, $maxPreviewWidth / $templateWidth);
+                    $displayWidth = $templateWidth * $previewScale;
+                    $displayHeight = $templateHeight * $previewScale;
+                    @endphp
+                    <div class="relative flex-1 bg-grid-pattern overflow-hidden flex items-center justify-center p-4">
+                        <!-- Wrapper with scaled dimensions to prevent overflow -->
+                        <div style="width: {{ $displayWidth }}px; height: {{ $displayHeight }}px;" class="relative">
+                            <div class="absolute bg-white shadow-2xl rounded-lg overflow-hidden ring-1 ring-black/5" style="width: {{ $templateWidth }}px; height: {{ $templateHeight }}px; transform: scale({{ $previewScale }}); transform-origin: top left;">
+                                @if($template->front_template)
+                                <img src="{{ Storage::url($template->front_template) }}" alt="Card Template" class="absolute inset-0 w-full h-full object-contain pointer-events-none">
+                                @else
+                                <div class="absolute inset-0 bg-gradient-to-br from-blue-100 to-blue-200 flex items-center justify-center">
+                                    <span class="material-symbols-outlined text-6xl text-blue-300">credit_card</span>
                                 </div>
-                            </template>
+                                @endif
+
+                                <!-- Fields Preview -->
+                                <template x-for="(field, name) in fields" :key="name">
+                                    <div class="absolute field-item border-2 border-dashed flex items-center justify-center px-2" :class="selectedField === name ? 'border-primary bg-primary/5' : 'border-transparent hover:border-gray-400'" :style="'left:' + field.x + 'px; top:' + field.y + 'px;' + (field.type === 'image' ? 'width:' + field.width + 'px; height:' + field.height + 'px;' : '')" @click="selectField(name)">
+                                        <template x-if="field.type === 'image'">
+                                            <div class="w-full h-full flex items-center justify-center bg-black/10 border border-gray-300">
+                                                <span class="material-symbols-outlined text-gray-500 text-3xl">person</span>
+                                            </div>
+                                        </template>
+                                        <template x-if="field.type !== 'image'">
+                                            <p class="whitespace-nowrap" :style="'font-family:' + field.font_family + ',sans-serif; font-size:' + field.font_size + 'px; color:' + field.font_color + '; font-weight:' + field.font_weight" x-text="getSample(name)"></p>
+                                        </template>
+                                    </div>
+                                </template>
+                            </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Properties Panel -->
-                <div class="w-full lg:w-[380px] flex flex-col gap-5 shrink-0">
+                <!-- Properties Panel (Right Side) -->
+                <div class="w-full lg:w-[320px] flex flex-col gap-5 shrink-0">
                     <!-- Add Field -->
                     <div class="bg-white dark:bg-[#1a2632] rounded-xl shadow-sm border border-[#e5e7eb] dark:border-gray-800 p-5">
                         <h3 class="text-[#111418] dark:text-white text-lg font-bold mb-4">Add Field</h3>

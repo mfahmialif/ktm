@@ -181,7 +181,7 @@ class KtmTemplateController extends Controller
         $savedSettings = $ktmTemplate->settings ?? [];
 
         // Build fields with settings (only enabled fields have settings)
-        // Ensure label is always populated from Student model
+        // Ensure label and type are always populated from Student model
         $enabledFields = [];
         foreach ($savedSettings as $fieldName => $fieldSettings) {
             if (isset($fieldSettings['enabled']) && $fieldSettings['enabled']) {
@@ -189,7 +189,29 @@ class KtmTemplateController extends Controller
                 if (!isset($fieldSettings['label']) || empty($fieldSettings['label'])) {
                     $fieldSettings['label'] = $studentFields[$fieldName]['label'] ?? \App\Models\Student::getFieldLabel($fieldName);
                 }
+                // Ensure type is set correctly (especially for photo field)
+                if (!isset($fieldSettings['type']) || empty($fieldSettings['type'])) {
+                    $fieldSettings['type'] = $studentFields[$fieldName]['type'] ?? 'text';
+                }
+                // Force photo to be image type
+                if ($fieldName === 'photo') {
+                    $fieldSettings['type'] = 'image';
+                }
                 $enabledFields[$fieldName] = $fieldSettings;
+            }
+        }
+
+        // Get template image dimensions for accurate preview
+        $templateWidth = 638;  // Default
+        $templateHeight = 400; // Default
+        if ($ktmTemplate->front_template) {
+            $templatePath = \Illuminate\Support\Facades\Storage::disk('public')->path($ktmTemplate->front_template);
+            if (file_exists($templatePath)) {
+                $imageSize = @getimagesize($templatePath);
+                if ($imageSize) {
+                    $templateWidth = $imageSize[0];
+                    $templateHeight = $imageSize[1];
+                }
             }
         }
 
@@ -197,6 +219,8 @@ class KtmTemplateController extends Controller
             'template' => $ktmTemplate,
             'availableFields' => $availableFields,
             'enabledFields' => $enabledFields,
+            'templateWidth' => $templateWidth,
+            'templateHeight' => $templateHeight,
         ]);
     }
 

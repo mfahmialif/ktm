@@ -3,7 +3,9 @@
 namespace App\Livewire\Admin\KtmGenerator;
 
 use App\Models\AcademicYear;
+use App\Models\KtmTemplate;
 use App\Models\Student;
+use App\Services\KtmGeneratorService;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -12,7 +14,7 @@ class Index extends Component
     use WithPagination;
 
     public $search = '';
-    public $filterAngkatan = '';  // For filtering students by angkatan
+    public $filterAngkatan = '';
     public $filterProdi = '';
     public $filterStatus = '';
     public $selectedStudents = [];
@@ -30,7 +32,6 @@ class Index extends Component
 
     public function mount()
     {
-        // Set default generate academic year to active one
         $activeYear = AcademicYear::active()->first();
         if ($activeYear) {
             $this->generateAcademicYear = $activeYear->id;
@@ -81,15 +82,16 @@ class Index extends Component
             })
             ->when($this->filterStatus, function ($query) {
                 if ($this->filterStatus === 'ready') {
-                    $query->whereNotNull('photo')->where('ktm_status', 'pending');
+                    $query->whereNotNull('photo')->whereIn('ktm_status', ['pending', null]);
                 } elseif ($this->filterStatus === 'generated') {
                     $query->where('ktm_status', 'generated');
-                } elseif ($this->filterStatus === 'missing_photo') {
+                } elseif ($this->filterStatus === 'no_photo') {
                     $query->whereNull('photo');
+                } elseif ($this->filterStatus === 'error') {
+                    $query->where('ktm_status', 'error');
                 }
             })
             ->when($this->filterAngkatan, function ($query) {
-                // Filter by angkatan directly
                 $query->where('angkatan', $this->filterAngkatan);
             })
             ->orderBy('name');
@@ -125,69 +127,125 @@ class Index extends Component
 
     public function getStudentStatus($student)
     {
-        if (empty($student->photo)) {
-            return 'missing_photo';
+        if ($student->ktm_status === 'error') {
+            return 'error';
         }
         if ($student->ktm_status === 'generated') {
             return 'generated';
         }
+        if (empty($student->photo)) {
+            return 'no_photo';
+        }
         return 'ready';
+    }
+
+    /**
+     * Get the active template for the selected academic year
+     */
+    protected function getActiveTemplate(): ?KtmTemplate
+    {
+        // First try to get template linked to academic year
+        $academicYear = AcademicYear::find($this->generateAcademicYear);
+
+        // Get any active template for now (can be enhanced to link template to academic year)
+        return KtmTemplate::where('is_active', true)->first();
+    }
+
+    /**
+     * Get KTM Generator Service instance
+     */
+    protected function getGeneratorService(): KtmGeneratorService
+    {
+        $service = new KtmGeneratorService();
+
+        $template = $this->getActiveTemplate();
+        if (!$template) {
+            throw new \Exception('Tidak ada template KTM yang aktif. Silakan aktifkan template terlebih dahulu.');
+        }
+
+        $service->setTemplate($template);
+
+        $academicYear = AcademicYear::find($this->generateAcademicYear);
+        if ($academicYear) {
+            $service->setAcademicYear($academicYear);
+        }
+
+        return $service;
     }
 
     public function generateSingle($studentId)
     {
-        // TODO: Implement actual KTM generation
-        $student = Student::find($studentId);
-        if ($student && !empty($student->photo)) {
-            $student->update([
-                'ktm_status' => 'generated',
-                'ktm_generated_at' => now(),
-            ]);
-            session()->flash('success', 'KTM untuk ' . $student->name . ' berhasil di-generate.');
+        try {
+            $student = Student::find($studentId);
+            if (!$student) {
+                session()->flash('error', 'Student tidak ditemukan.');
+                return;
+            }
+
+            $service = $this->getGeneratorService();
+            $result = $service->generateForStudent($student);
+
+            if ($result['success']) {
+                $student->update([
+                    'ktm_status' => 'generated',
+                    'ktm_generated_at' => now(),
+                    'ktm_file_path' => $result['path'],
+                    'ktm_error_message' => null,
+                ]);
+
+                $photoInfo = empty($student->photo) ? ' (menggunakan foto default)' : '';
+                session()->flash('success', 'KTM untuk ' . $student->name . ' berhasil di-generate' . $photoInfo . '.');
+            }
+        } catch (\Exception $e) {
+            session()->flash('error', 'Gagal generate KTM: ' . $e->getMessage());
         }
     }
 
     public function generateBulk()
     {
-        $count = 0;
-        $students = Student::whereIn('id', $this->selectedStudents)
-            ->whereNotNull('photo')
-            ->where('ktm_status', '!=', 'generated')
-            ->get();
+        try {
+            $service = $this->getGeneratorService();
 
-        foreach ($students as $student) {
-            // TODO: Implement actual KTM generation
-            $student->update([
-                'ktm_status' => 'generated',
-                'ktm_generated_at' => now(),
-            ]);
-            $count++;
+            $students = Student::whereIn('id', $this->selectedStudents)
+                ->where('ktm_status', '!=', 'generated')
+                ->get()
+                ->all();
+
+            $results = $service->generateBatch($students);
+
+            $this->selectedStudents = [];
+            $this->selectAll = false;
+
+            $msg = $results['success'] . ' KTM berhasil di-generate.';
+            if ($results['failed'] > 0) {
+                $msg .= ' ' . $results['failed'] . ' gagal.';
+            }
+            session()->flash('success', $msg);
+        } catch (\Exception $e) {
+            session()->flash('error', 'Gagal generate KTM: ' . $e->getMessage());
         }
-
-        $this->selectedStudents = [];
-        $this->selectAll = false;
-
-        session()->flash('success', $count . ' KTM berhasil di-generate.');
     }
 
     public function generateAll()
     {
-        $count = 0;
-        $students = $this->getStudentsQuery()
-            ->whereNotNull('photo')
-            ->where('ktm_status', '!=', 'generated')
-            ->get();
+        try {
+            $service = $this->getGeneratorService();
 
-        foreach ($students as $student) {
-            // TODO: Implement actual KTM generation
-            $student->update([
-                'ktm_status' => 'generated',
-                'ktm_generated_at' => now(),
-            ]);
-            $count++;
+            $students = $this->getStudentsQuery()
+                ->where('ktm_status', '!=', 'generated')
+                ->get()
+                ->all();
+
+            $results = $service->generateBatch($students);
+
+            $msg = $results['success'] . ' KTM berhasil di-generate.';
+            if ($results['failed'] > 0) {
+                $msg .= ' ' . $results['failed'] . ' gagal.';
+            }
+            session()->flash('success', $msg);
+        } catch (\Exception $e) {
+            session()->flash('error', 'Gagal generate KTM: ' . $e->getMessage());
         }
-
-        session()->flash('success', $count . ' KTM berhasil di-generate.');
     }
 
     public function render()
