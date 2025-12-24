@@ -173,7 +173,11 @@ class KtmGeneratorService
         // Map font family to font file path (with weight support)
         $fontPath = $this->getFontPath($fontFamily, $fontWeight);
 
-        $image->text($text, $x, $y, function (FontFactory $font) use ($fontPath, $fontSize, $fontColor) {
+        // Add font size to Y to simulate top-left positioning
+        // Intervention Image positions text by baseline, CSS positions by top
+        $adjustedY = $y + $fontSize;
+
+        $image->text($text, $x, $adjustedY, function (FontFactory $font) use ($fontPath, $fontSize, $fontColor) {
             $font->filename($fontPath);
             $font->size($fontSize);
             $font->color($fontColor);

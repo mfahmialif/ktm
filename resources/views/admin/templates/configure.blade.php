@@ -171,14 +171,14 @@ $availableJson = json_encode($availableFields ?: []);
 
                                 <!-- Fields Preview -->
                                 <template x-for="(field, name) in fields" :key="name">
-                                    <div class="absolute field-item border-2 border-dashed flex items-center justify-center px-2" :class="selectedField === name ? 'border-primary bg-primary/5' : 'border-transparent hover:border-gray-400'" :style="'left:' + field.x + 'px; top:' + field.y + 'px;' + (field.type === 'image' ? 'width:' + field.width + 'px; height:' + field.height + 'px;' : '')" @click="selectField(name)">
+                                    <div class="absolute field-item border-2 border-dashed" :class="selectedField === name ? 'border-primary bg-primary/5' : 'border-transparent hover:border-gray-400'" :style="'left:' + field.x + 'px; top:' + field.y + 'px;' + (field.type === 'image' ? 'width:' + field.width + 'px; height:' + field.height + 'px;' : '')" @click="selectField(name)">
                                         <template x-if="field.type === 'image'">
                                             <div class="w-full h-full flex items-center justify-center bg-black/10 border border-gray-300">
                                                 <span class="material-symbols-outlined text-gray-500 text-3xl">person</span>
                                             </div>
                                         </template>
                                         <template x-if="field.type !== 'image'">
-                                            <p class="whitespace-nowrap" :style="'font-family:' + field.font_family + ',sans-serif; font-size:' + field.font_size + 'px; color:' + field.font_color + '; font-weight:' + field.font_weight" x-text="getSample(name)"></p>
+                                            <p class="whitespace-nowrap leading-none" :style="'font-family:' + field.font_family + ',sans-serif; font-size:' + field.font_size + 'px; color:' + field.font_color + '; font-weight:' + field.font_weight" x-text="getSample(name)"></p>
                                         </template>
                                     </div>
                                 </template>
