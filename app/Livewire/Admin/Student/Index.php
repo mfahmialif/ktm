@@ -13,7 +13,13 @@ class Index extends Component
     public $search = '';
     public $filterProdi = '';
     public $filterAngkatan = '';
+    public $filterJenisKelamin = '';
     public $perPage = 10;
+
+    public function updatedFilterJenisKelamin()
+    {
+        $this->resetPage();
+    }
 
     public function updatedSearch()
     {
@@ -72,6 +78,10 @@ class Index extends Component
 
         if ($this->filterAngkatan) {
             $query->whereRaw('SUBSTRING(nim, 1, 4) = ?', [$this->filterAngkatan]);
+        }
+
+        if ($this->filterJenisKelamin) {
+            $query->where('jenis_kelamin', $this->filterJenisKelamin);
         }
 
         $students = $query->orderBy('created_at', 'desc')->paginate($this->perPage);

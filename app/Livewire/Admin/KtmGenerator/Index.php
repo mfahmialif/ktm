@@ -24,6 +24,7 @@ class Index extends Component
     public $filterAngkatan = '';
     public $filterProdi = '';
     public $filterStatus = '';
+    public $filterJenisKelamin = '';
     public $filterTemplate = ''; // New filter by template status
     public $selectedStudents = [];
     public $selectAll = false;
@@ -76,6 +77,11 @@ class Index extends Component
     }
 
     public function updatingFilterAngkatan()
+    {
+        $this->resetPage();
+    }
+
+    public function updatingFilterJenisKelamin()
     {
         $this->resetPage();
     }
@@ -152,9 +158,13 @@ class Index extends Component
                     });
                 }
             })
+
             ->when($this->filterAngkatan, function ($query) {
                 // Filter by first 4 digits of NIM (angkatan year)
                 $query->whereRaw('SUBSTRING(nim, 1, 4) = ?', [$this->filterAngkatan]);
+            })
+            ->when($this->filterJenisKelamin, function ($query) {
+                $query->where('jenis_kelamin', $this->filterJenisKelamin);
             })
             ->orderBy('name');
     }
@@ -515,6 +525,7 @@ class Index extends Component
                 'filter_criteria' => [
                     'angkatan' => $this->filterAngkatan,
                     'prodi' => $this->filterProdi,
+                    'jenis_kelamin' => $this->filterJenisKelamin,
                     'status' => $this->filterStatus,
                     'search' => $this->search,
                 ],

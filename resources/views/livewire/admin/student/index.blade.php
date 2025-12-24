@@ -19,6 +19,14 @@
             <p class="mt-1 text-sm text-[#617589] dark:text-slate-400">Manage student data, profiles, and academic information.</p>
         </div>
         <div class="flex items-center gap-3">
+            <a href="{{ route('students.export') }}" target="_blank" class="inline-flex items-center justify-center h-10 px-4 py-2 text-sm font-medium text-[#111418] dark:text-white transition-colors bg-white dark:bg-[#1a2632] border border-[#e5e7eb] dark:border-[#2a3b4d] rounded-lg hover:bg-gray-50 dark:hover:bg-[#23303d] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-200 shadow-sm">
+                <span class="material-symbols-outlined mr-2 text-[20px]">download</span>
+                Export
+            </a>
+            <a href="{{ route('students.import') }}" class="inline-flex items-center justify-center h-10 px-4 py-2 text-sm font-medium text-[#111418] dark:text-white transition-colors bg-white dark:bg-[#1a2632] border border-[#e5e7eb] dark:border-[#2a3b4d] rounded-lg hover:bg-gray-50 dark:hover:bg-[#23303d] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-200 shadow-sm">
+                <span class="material-symbols-outlined mr-2 text-[20px]">upload</span>
+                Import
+            </a>
             <a href="{{ route('students.create') }}" class="inline-flex items-center justify-center h-10 px-4 py-2 text-sm font-medium text-white transition-colors bg-primary rounded-lg hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary shadow-sm">
                 <span class="material-symbols-outlined mr-2 text-[20px]">add</span>
                 Add Student
@@ -58,6 +66,18 @@
                     @foreach($prodiList as $prodi)
                     <option value="{{ $prodi }}">{{ $prodi }}</option>
                     @endforeach
+                </select>
+                <div class="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-[#617589]">
+                    <span class="material-symbols-outlined text-[20px]">expand_more</span>
+                </div>
+            </div>
+
+            <!-- Gender Filter -->
+            <div class="relative min-w-[140px]">
+                <select wire:model.live="filterJenisKelamin" class="w-full appearance-none h-10 rounded-lg bg-white dark:bg-[#1a2632] border border-[#e5e7eb] dark:border-[#2a3b4d] text-[#111418] dark:text-white pl-3 pr-8 text-sm font-medium focus:ring-primary focus:border-primary cursor-pointer">
+                    <option value="">All Genders</option>
+                    <option value="L">Laki-laki</option>
+                    <option value="P">Perempuan</option>
                 </select>
                 <div class="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-[#617589]">
                     <span class="material-symbols-outlined text-[20px]">expand_more</span>

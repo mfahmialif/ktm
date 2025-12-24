@@ -22,6 +22,10 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     // Students
+    Route::get('students/export', [\App\Http\Controllers\StudentController::class, 'export'])->name('students.export');
+    Route::get('students/template', [\App\Http\Controllers\StudentController::class, 'downloadTemplate'])->name('students.template');
+    Route::get('students/import', [\App\Http\Controllers\StudentController::class, 'import'])->name('students.import');
+    Route::post('students/import', [\App\Http\Controllers\StudentController::class, 'importStore'])->name('students.import.store');
     Route::resource('students', \App\Http\Controllers\StudentController::class);
 
     // Academic Years (Tahun Akademik)

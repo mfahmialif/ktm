@@ -188,16 +188,6 @@
             </div>
         </label>
         <div class="flex gap-2 flex-wrap items-center w-full md:w-auto overflow-x-auto pb-1 md:pb-0 justify-start md:justify-end">
-            <!-- Template Filter -->
-            <div class="relative">
-                <select wire:model.live="filterTemplate" class="appearance-none h-9 rounded-lg bg-primary/10 text-primary pl-4 pr-8 text-sm font-medium border border-primary/30">
-                    <option value="">All Templates</option>
-                    @foreach($allTemplates as $template)
-                    <option value="{{ $template->id }}">{{ $template->name }}</option>
-                    @endforeach
-                </select>
-                <span class="material-symbols-outlined text-[18px] absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-primary">expand_more</span>
-            </div>
             <!-- Angkatan Filter -->
             <div class="relative">
                 <select wire:model.live="filterAngkatan" class="appearance-none h-9 rounded-lg bg-[#f0f2f4] dark:bg-gray-800 text-[#111418] dark:text-white pl-4 pr-8 text-sm font-medium border-none">
@@ -215,6 +205,15 @@
                     @foreach($prodiList as $prodi)
                     <option value="{{ $prodi }}">{{ $prodi }}</option>
                     @endforeach
+                </select>
+                <span class="material-symbols-outlined text-[18px] absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">expand_more</span>
+            </div>
+            <!-- Gender Filter -->
+            <div class="relative">
+                <select wire:model.live="filterJenisKelamin" class="appearance-none h-9 rounded-lg bg-[#f0f2f4] dark:bg-gray-800 text-[#111418] dark:text-white pl-4 pr-8 text-sm font-medium border-none">
+                    <option value="">All Genders</option>
+                    <option value="L">Laki-laki</option>
+                    <option value="P">Perempuan</option>
                 </select>
                 <span class="material-symbols-outlined text-[18px] absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">expand_more</span>
             </div>
@@ -266,6 +265,7 @@
                         <th class="p-4 text-xs font-bold uppercase tracking-wider text-[#617589] dark:text-gray-400">NIM</th>
                         <th class="p-4 text-xs font-bold uppercase tracking-wider text-[#617589] dark:text-gray-400">Student Name</th>
                         <th class="p-4 text-xs font-bold uppercase tracking-wider text-[#617589] dark:text-gray-400">Study Program</th>
+                        <th class="p-4 text-xs font-bold uppercase tracking-wider text-[#617589] dark:text-gray-400">Gender</th>
                         <th class="p-4 text-xs font-bold uppercase tracking-wider text-[#617589] dark:text-gray-400">Angkatan</th>
                         <th class="p-4 text-xs font-bold uppercase tracking-wider text-[#617589] dark:text-gray-400">Status</th>
                         <th class="p-4 text-xs font-bold uppercase tracking-wider text-[#617589] dark:text-gray-400 text-right">Actions</th>
@@ -295,6 +295,7 @@
                             </div>
                         </td>
                         <td class="p-4 text-sm text-[#111418] dark:text-white">{{ $student->prodi ?? $student->major ?? '-' }}</td>
+                        <td class="p-4 text-sm text-[#111418] dark:text-white">{{ $student->jenis_kelamin ?? '-' }}</td>
                         <td class="p-4 text-sm text-[#111418] dark:text-white">{{ $student->angkatan ?? '-' }}</td>
                         <td class="p-4">
                             @if($status === 'ready')

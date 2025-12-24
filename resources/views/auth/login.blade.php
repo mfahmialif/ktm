@@ -53,16 +53,16 @@
                 <form method="POST" action="{{ route('login') }}" class="flex flex-col gap-5">
                     @csrf
 
-                    <!-- Email Field -->
+                    <!-- Username Field -->
                     <div class="flex flex-col gap-2">
-                        <label class="text-[#111418] dark:text-gray-200 text-base font-medium leading-normal" for="email">
-                            Email Address
+                        <label class="text-[#111418] dark:text-gray-200 text-base font-medium leading-normal" for="username">
+                            Username
                         </label>
                         <div class="relative">
-                            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#617589]">mail</span>
-                            <input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#111418] dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-[#dbe0e6] dark:border-gray-600 bg-white dark:bg-[#23303d] focus:border-primary h-14 placeholder:text-[#617589] pl-12 pr-4 text-base font-normal leading-normal transition-all" id="email" name="email" type="email" placeholder="admin@university.edu" value="{{ old('email') }}" required autofocus autocomplete="username" />
+                            <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-[#617589]">person</span>
+                            <input class="form-input flex w-full min-w-0 flex-1 resize-none overflow-hidden rounded-lg text-[#111418] dark:text-white focus:outline-0 focus:ring-2 focus:ring-primary/50 border border-[#dbe0e6] dark:border-gray-600 bg-white dark:bg-[#23303d] focus:border-primary h-14 placeholder:text-[#617589] pl-12 pr-4 text-base font-normal leading-normal transition-all" id="username" name="username" type="text" placeholder="Enter username" value="{{ old('username') }}" required autofocus autocomplete="username" />
                         </div>
-                        <x-input-error :messages="$errors->get('email')" class="mt-1" />
+                        <x-input-error :messages="$errors->get('username')" class="mt-1" />
                     </div>
 
                     <!-- Password Field -->
