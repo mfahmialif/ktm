@@ -22,7 +22,7 @@
                 </div>
                 <div class="flex items-center gap-3 text-sm font-medium text-white/80">
                     <span class="material-symbols-outlined text-lg">verified_user</span>
-                    <span>Official University System</span>
+                    <span>Official UII Dalwa</span>
                 </div>
             </div>
         </div>
@@ -79,13 +79,6 @@
                         </div>
                         <x-input-error :messages="$errors->get('password')" class="mt-1" />
 
-                        @if (Route::has('password.request'))
-                        <div class="flex justify-end mt-1">
-                            <a class="text-sm font-medium text-primary hover:text-primary/80 transition-colors" href="{{ route('password.request') }}">
-                                Forgot Password?
-                            </a>
-                        </div>
-                        @endif
                     </div>
 
                     <!-- Submit Button -->
@@ -100,8 +93,7 @@
                 <!-- Footer / Helper -->
                 <div class="mt-8 text-center">
                     <p class="text-[#617589] dark:text-gray-500 text-sm">
-                        © {{ date('Y') }} University KTM System. <br>
-                        Need help? Contact <a class="text-primary hover:underline" href="#">IT Support</a>.
+                        © {{ date('Y') }} KTM UII Dalwa.
                     </p>
                 </div>
             </div>

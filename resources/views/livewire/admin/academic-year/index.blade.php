@@ -13,9 +13,9 @@
             <div class="flex items-center text-sm text-[#617589] dark:text-slate-400 font-medium mb-2">
                 <span>Dashboard</span>
                 <span class="mx-2">›</span>
-                <span class="text-[#111418] dark:text-white">Tahun Akademik</span>
+                <span class="text-[#111418] dark:text-white">Academic Year</span>
             </div>
-            <h2 class="text-3xl font-bold tracking-tight text-[#111418] dark:text-white">Kelola Tahun Akademik</h2>
+            <h2 class="text-3xl font-bold tracking-tight text-[#111418] dark:text-white">Academic Year Management</h2>
             <p class="mt-1 text-sm text-[#617589] dark:text-slate-400">Manage academic years, semesters, and active status.</p>
         </div>
         <div class="flex items-center gap-3">

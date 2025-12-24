@@ -32,13 +32,13 @@ class DashboardController extends Controller
         // OR filtering by active template would be better, but user didn't specify.
         // Let's use: Total Students - Students who have generated at least one KTM.
         $studentsWithKtm = \App\Models\StudentKtmStatus::generated()->distinct('student_id')->count('student_id');
-        $notGeneratedKtms = $totalStudents - $studentsWithKtm;
+        $notGeneratedKtms = ($totalStudents * $totalTemplates) - $studentsWithKtm;
 
         $failedKtms = \App\Models\StudentKtmStatus::error()->count();
 
         // Calculate percentage (based on students coverage)
-        $generatedPercentage = $totalStudents > 0
-            ? round(($studentsWithKtm / $totalStudents) * 100)
+        $generatedPercentage = ($totalStudents * $totalTemplates) > 0
+            ? round(($studentsWithKtm / ($totalStudents * $totalTemplates)) * 100)
             : 0;
 
         // Get recent download history
