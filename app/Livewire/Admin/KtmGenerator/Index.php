@@ -11,6 +11,7 @@ use App\Models\KtmTemplate;
 use App\Models\Student;
 use App\Models\StudentKtmStatus;
 use App\Services\KtmGeneratorService;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -34,6 +35,11 @@ class Index extends Component
 
     // For download job progress tracking
     public $activeDownloadId = null;
+
+    // Download jobs list properties
+    public $downloadJobSearch = '';
+    public $downloadJobFilterStatus = '';
+    public $downloadJobFilterTemplate = '';
 
     protected $queryString = [
         'search' => ['except' => ''],
@@ -566,6 +572,48 @@ class Index extends Component
         $this->activeBatchId = null;
     }
 
+    /**
+     * Get paginated download jobs list with search and filters
+     */
+    public function getDownloadJobsProperty()
+    {
+        return KtmDownloadJob::query()
+            ->with('template')
+            ->when($this->downloadJobSearch, function ($query) {
+                $query->where('download_id', 'like', '%' . $this->downloadJobSearch . '%');
+            })
+            ->when($this->downloadJobFilterStatus, function ($query) {
+                $query->where('status', $this->downloadJobFilterStatus);
+            })
+            ->when($this->downloadJobFilterTemplate, function ($query) {
+                $query->where('ktm_template_id', $this->downloadJobFilterTemplate);
+            })
+            ->orderByDesc('created_at')
+            ->paginate(5, ['*'], 'downloadJobsPage');
+    }
+
+    /**
+     * Delete a download job and its ZIP file
+     */
+    public function deleteDownloadJob($id)
+    {
+        try {
+            $downloadJob = KtmDownloadJob::findOrFail($id);
+
+            // Delete ZIP file if exists
+            if ($downloadJob->zip_path && Storage::disk('public')->exists($downloadJob->zip_path)) {
+                Storage::disk('public')->delete($downloadJob->zip_path);
+            }
+
+            // Delete job record
+            $downloadJob->delete();
+
+            session()->flash('success', 'Download job berhasil dihapus.');
+        } catch (\Exception $e) {
+            session()->flash('error', 'Gagal menghapus download job: ' . $e->getMessage());
+        }
+    }
+
     public function render()
     {
         return view('livewire.admin.ktm-generator.index', [
@@ -576,6 +624,7 @@ class Index extends Component
             'angkatanList' => $this->angkatanList,
             'activeBatch' => $this->activeBatch,
             'activeDownload' => $this->activeDownload,
+            'downloadJobs' => $this->downloadJobs,
         ]);
     }
 }
