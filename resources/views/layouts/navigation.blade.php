@@ -13,17 +13,17 @@
                     <span class="material-symbols-outlined {{ request()->routeIs('dashboard') ? 'icon-filled' : '' }} text-xl">dashboard</span>
                     <span class="text-sm font-{{ request()->routeIs('dashboard') ? 'semibold' : 'medium' }} leading-normal">Dashboard</span>
                 </a>
-                <a class="flex items-center gap-2 px-3 py-2 rounded-lg {{ request()->routeIs('templates.*') ? 'bg-primary/10 text-primary' : 'hover:bg-gray-100 dark:hover:bg-[#2a3b4d] text-[#617589] dark:text-slate-400 hover:text-[#111418] dark:hover:text-white' }} transition-colors" href="#">
+                <a class="flex items-center gap-2 px-3 py-2 rounded-lg {{ request()->routeIs('templates.*') ? 'bg-primary/10 text-primary' : 'hover:bg-gray-100 dark:hover:bg-[#2a3b4d] text-[#617589] dark:text-slate-400 hover:text-[#111418] dark:hover:text-white' }} transition-colors" href="{{ route('templates.index') }}">
                     <span class="material-symbols-outlined text-xl">description</span>
                     <span class="text-sm font-medium leading-normal">Template KTM</span>
                 </a>
-                <a class="flex items-center gap-2 px-3 py-2 rounded-lg {{ request()->routeIs('generate.*') ? 'bg-primary/10 text-primary' : 'hover:bg-gray-100 dark:hover:bg-[#2a3b4d] text-[#617589] dark:text-slate-400 hover:text-[#111418] dark:hover:text-white' }} transition-colors" href="#">
+                <a class="flex items-center gap-2 px-3 py-2 rounded-lg {{ request()->routeIs('ktm-generator.*') ? 'bg-primary/10 text-primary' : 'hover:bg-gray-100 dark:hover:bg-[#2a3b4d] text-[#617589] dark:text-slate-400 hover:text-[#111418] dark:hover:text-white' }} transition-colors" href="{{ route('ktm-generator.index') }}">
                     <span class="material-symbols-outlined text-xl">manufacturing</span>
                     <span class="text-sm font-medium leading-normal">Generate KTM</span>
                 </a>
-                <a class="flex items-center gap-2 px-3 py-2 rounded-lg {{ request()->routeIs('download.*') ? 'bg-primary/10 text-primary' : 'hover:bg-gray-100 dark:hover:bg-[#2a3b4d] text-[#617589] dark:text-slate-400 hover:text-[#111418] dark:hover:text-white' }} transition-colors" href="#">
-                    <span class="material-symbols-outlined text-xl">download</span>
-                    <span class="text-sm font-medium leading-normal">Download KTM</span>
+                <a class="flex items-center gap-2 px-3 py-2 rounded-lg {{ request()->routeIs('download-jobs.*') ? 'bg-primary/10 text-primary' : 'hover:bg-gray-100 dark:hover:bg-[#2a3b4d] text-[#617589] dark:text-slate-400 hover:text-[#111418] dark:hover:text-white' }} transition-colors" href="{{ route('download-jobs.index') }}">
+                    <span class="material-symbols-outlined text-xl">history</span>
+                    <span class="text-sm font-medium leading-normal">Download History</span>
                 </a>
             </nav>
         </div>
@@ -92,17 +92,17 @@
                 <span class="material-symbols-outlined {{ request()->routeIs('dashboard') ? 'icon-filled' : '' }}">dashboard</span>
                 <span class="text-sm font-semibold">Dashboard</span>
             </a>
-            <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#617589] dark:text-slate-400" href="#">
+            <a class="flex items-center gap-3 px-3 py-2 rounded-lg {{ request()->routeIs('templates.*') ? 'bg-primary/10 text-primary' : 'text-[#617589] dark:text-slate-400' }}" href="{{ route('templates.index') }}">
                 <span class="material-symbols-outlined">description</span>
                 <span class="text-sm font-medium">Template KTM</span>
             </a>
-            <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#617589] dark:text-slate-400" href="#">
+            <a class="flex items-center gap-3 px-3 py-2 rounded-lg {{ request()->routeIs('ktm-generator.*') ? 'bg-primary/10 text-primary' : 'text-[#617589] dark:text-slate-400' }}" href="{{ route('ktm-generator.index') }}">
                 <span class="material-symbols-outlined">manufacturing</span>
                 <span class="text-sm font-medium">Generate KTM</span>
             </a>
-            <a class="flex items-center gap-3 px-3 py-2 rounded-lg text-[#617589] dark:text-slate-400" href="#">
-                <span class="material-symbols-outlined">download</span>
-                <span class="text-sm font-medium">Download KTM</span>
+            <a class="flex items-center gap-3 px-3 py-2 rounded-lg {{ request()->routeIs('download-jobs.*') ? 'bg-primary/10 text-primary' : 'text-[#617589] dark:text-slate-400' }}" href="{{ route('download-jobs.index') }}">
+                <span class="material-symbols-outlined">history</span>
+                <span class="text-sm font-medium">Download History</span>
             </a>
         </nav>
     </div>

@@ -15,8 +15,8 @@ class DashboardController extends Controller
     public function index(): View
     {
         // Get active template status
-        $activeTemplate = KtmTemplate::getActive();
-        $templateStatus = $activeTemplate && $activeTemplate->isConfigured() ? 'Configured' : 'Not Configured';
+        $activeTemplate = 0;
+        $templateStatus = $activeTemplate  ? 'Configured' : 'Not Configured';
         $isTemplateActive = $activeTemplate !== null;
 
         // Get student statistics

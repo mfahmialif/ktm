@@ -152,18 +152,16 @@
 
         <!-- Pagination -->
         @if($downloadJobs->hasPages())
-        <div class="flex items-center justify-between border-t border-[#e5e7eb] dark:border-gray-800 px-4 py-3 sm:px-6 bg-white dark:bg-[#1a2632] rounded-b-xl">
-            <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-                <div>
-                    <p class="text-sm text-gray-700 dark:text-gray-400">
-                        Showing <span class="font-bold text-[#111418] dark:text-white">{{ $downloadJobs->firstItem() }}</span>
-                        to <span class="font-bold text-[#111418] dark:text-white">{{ $downloadJobs->lastItem() }}</span>
-                        of <span class="font-bold text-[#111418] dark:text-white">{{ $downloadJobs->total() }}</span> jobs
-                    </p>
-                </div>
-                <div>
-                    {{ $downloadJobs->links() }}
-                </div>
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-[#e5e7eb] dark:border-gray-800 px-4 py-3 sm:px-6 bg-white dark:bg-[#1a2632] rounded-b-xl">
+            <div class="hidden sm:block">
+                <p class="text-sm text-gray-700 dark:text-gray-400">
+                    Showing <span class="font-bold text-[#111418] dark:text-white">{{ $downloadJobs->firstItem() }}</span>
+                    to <span class="font-bold text-[#111418] dark:text-white">{{ $downloadJobs->lastItem() }}</span>
+                    of <span class="font-bold text-[#111418] dark:text-white">{{ $downloadJobs->total() }}</span> jobs
+                </p>
+            </div>
+            <div class="w-full sm:w-auto overflow-x-auto">
+                {{ $downloadJobs->links('components.pagination') }}
             </div>
         </div>
         @endif

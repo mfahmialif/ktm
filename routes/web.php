@@ -47,7 +47,7 @@ Route::middleware('auth')->group(function () {
     Route::post('/templates/{ktmTemplate}/reset-settings', [KtmTemplateController::class, 'resetSettings'])->name('templates.reset-settings');
 
     // KTM Download Jobs
-    Route::get('/download-jobs', [\App\Http\Controllers\KtmDownloadJobController::class, 'index'])->name('download-jobs.index');
+    Route::get('/download-jobs', \App\Livewire\Admin\DownloadJobs\Index::class)->name('download-jobs.index');
     Route::get('/download-jobs/{id}/download', [\App\Http\Controllers\KtmDownloadJobController::class, 'download'])->name('download-jobs.download');
     Route::delete('/download-jobs/{id}', [\App\Http\Controllers\KtmDownloadJobController::class, 'destroy'])->name('download-jobs.destroy');
 

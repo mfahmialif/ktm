@@ -4,6 +4,7 @@ namespace App\Livewire\Admin\DownloadJobs;
 
 use App\Models\KtmDownloadJob;
 use App\Models\KtmTemplate;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -71,8 +72,8 @@ class Index extends Component
         $downloadJob = KtmDownloadJob::findOrFail($id);
 
         // Delete ZIP file if exists
-        if ($downloadJob->zip_path && \Storage::disk('public')->exists($downloadJob->zip_path)) {
-            \Storage::disk('public')->delete($downloadJob->zip_path);
+        if ($downloadJob->zip_path && Storage::disk('public')->exists($downloadJob->zip_path)) {
+            Storage::disk('public')->delete($downloadJob->zip_path);
         }
 
         $downloadJob->delete();
@@ -85,6 +86,6 @@ class Index extends Component
         return view('livewire.admin.download-jobs.index', [
             'downloadJobs' => $this->downloadJobs,
             'allTemplates' => $this->allTemplates,
-        ])->layout('layouts.app');
+        ])->layout('components.admin-layout', ['title' => 'Download Jobs']);
     }
 }

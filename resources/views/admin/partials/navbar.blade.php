@@ -3,7 +3,8 @@ $menuItems = [
 ['route' => 'dashboard', 'icon' => 'dashboard', 'label' => 'Dashboard'],
 ['route' => 'academic-years.*', 'icon' => 'calendar_month', 'label' => 'Tahun', 'href' => route('academic-years.index')],
 ['route' => 'templates.*', 'icon' => 'description', 'label' => 'Template', 'href' => route('templates.index')],
-['route' => 'ktm-generator.*', 'icon' => 'id_card', 'label' => 'Generate & Download', 'href' => route('ktm-generator.index')]
+['route' => 'ktm-generator.*', 'icon' => 'id_card', 'label' => 'Generate', 'href' => route('ktm-generator.index')],
+['route' => 'download-jobs.*', 'icon' => 'history', 'label' => 'History', 'href' => route('download-jobs.index')]
 ];
 @endphp
 

@@ -11,6 +11,7 @@ use App\Models\KtmTemplate;
 use App\Models\Student;
 use App\Models\StudentKtmStatus;
 use App\Services\KtmGeneratorService;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -447,7 +448,7 @@ class Index extends Component
             $downloadId = KtmDownloadJob::generateDownloadId();
             $downloadJob = KtmDownloadJob::create([
                 'ktm_template_id' => $template->id,
-                'user_id' => auth()->id(),
+                'user_id' => Auth::user()->id,
                 'download_id' => $downloadId,
                 'filter_criteria' => [
                     'selected_students' => true,
@@ -509,7 +510,7 @@ class Index extends Component
             $downloadId = KtmDownloadJob::generateDownloadId();
             $downloadJob = KtmDownloadJob::create([
                 'ktm_template_id' => $template->id,
-                'user_id' => auth()->id(),
+                'user_id' => Auth::user()->id,
                 'download_id' => $downloadId,
                 'filter_criteria' => [
                     'angkatan' => $this->filterAngkatan,

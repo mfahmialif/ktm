@@ -373,173 +373,20 @@
 
         <!-- Pagination -->
         @if($students->hasPages())
-        <div class="flex items-center justify-between border-t border-[#e5e7eb] dark:border-gray-800 px-4 py-3 sm:px-6 bg-white dark:bg-[#1a2632] rounded-b-xl">
-            <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-                <div>
-                    <p class="text-sm text-gray-700 dark:text-gray-400">
-                        Showing <span class="font-bold text-[#111418] dark:text-white">{{ $students->firstItem() }}</span>
-                        to <span class="font-bold text-[#111418] dark:text-white">{{ $students->lastItem() }}</span>
-                        of <span class="font-bold text-[#111418] dark:text-white">{{ $students->total() }}</span> results
-                    </p>
-                </div>
-                <div>
-                    {{ $students->links() }}
-                </div>
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-[#e5e7eb] dark:border-gray-800 px-4 py-3 sm:px-6 bg-white dark:bg-[#1a2632] rounded-b-xl">
+            <div class="hidden sm:block">
+                <p class="text-sm text-gray-700 dark:text-gray-400">
+                    Showing <span class="font-bold text-[#111418] dark:text-white">{{ $students->firstItem() }}</span>
+                    to <span class="font-bold text-[#111418] dark:text-white">{{ $students->lastItem() }}</span>
+                    of <span class="font-bold text-[#111418] dark:text-white">{{ $students->total() }}</span> results
+                </p>
+            </div>
+            <div class="w-full sm:w-auto overflow-x-auto">
+                {{ $students->links('components.pagination') }}
             </div>
         </div>
         @endif
     </div>
 
-    <!-- Download History Section -->
-    <div class="mt-8">
-        <div class="flex flex-col md:flex-row md:justify-between md:items-center gap-4 mb-4">
-            <h2 class="text-xl font-bold text-[#111418] dark:text-white flex items-center gap-2">
-                <span class="material-symbols-outlined text-primary">history</span>
-                Download History
-            </h2>
-        </div>
-
-        <!-- Search & Filters for Download Jobs -->
-        <div class="flex flex-col md:flex-row gap-4 justify-between items-center bg-white dark:bg-[#1a2632] p-4 rounded-xl shadow-sm border border-[#e5e7eb] dark:border-gray-800 mb-4">
-            <label class="flex flex-col h-10 w-full md:max-w-xs">
-                <div class="flex w-full flex-1 items-stretch rounded-lg h-full group">
-                    <div class="text-[#617589] flex border-none bg-[#f0f2f4] dark:bg-gray-800 items-center justify-center pl-4 rounded-l-lg">
-                        <span class="material-symbols-outlined text-[18px]">search</span>
-                    </div>
-                    <input wire:model.live.debounce.300ms="downloadJobSearch" class="flex w-full min-w-0 flex-1 rounded-lg text-[#111418] dark:text-white focus:outline-none focus:ring-2 focus:ring-primary border-none bg-[#f0f2f4] dark:bg-gray-800 h-full placeholder:text-[#617589] px-4 rounded-l-none pl-2 text-sm" placeholder="Search Download ID..." />
-                </div>
-            </label>
-            <div class="flex gap-2 flex-wrap items-center w-full md:w-auto justify-start md:justify-end">
-                <!-- Status Filter -->
-                <div class="relative">
-                    <select wire:model.live="downloadJobFilterStatus" class="appearance-none h-9 rounded-lg bg-[#f0f2f4] dark:bg-gray-800 text-[#111418] dark:text-white pl-4 pr-8 text-sm font-medium border-none">
-                        <option value="">All Status</option>
-                        <option value="pending">Pending</option>
-                        <option value="processing">Processing</option>
-                        <option value="completed">Completed</option>
-                        <option value="failed">Failed</option>
-                    </select>
-                    <span class="material-symbols-outlined text-[18px] absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">expand_more</span>
-                </div>
-                <!-- Template Filter -->
-                <div class="relative">
-                    <select wire:model.live="downloadJobFilterTemplate" class="appearance-none h-9 rounded-lg bg-[#f0f2f4] dark:bg-gray-800 text-[#111418] dark:text-white pl-4 pr-8 text-sm font-medium border-none">
-                        <option value="">All Templates</option>
-                        @foreach($allTemplates as $template)
-                        <option value="{{ $template->id }}">{{ $template->name }}</option>
-                        @endforeach
-                    </select>
-                    <span class="material-symbols-outlined text-[18px] absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">expand_more</span>
-                </div>
-            </div>
-        </div>
-
-        <!-- Download Jobs Table -->
-        <div class="w-full overflow-hidden rounded-xl border border-[#e5e7eb] dark:border-gray-800 bg-white dark:bg-[#1a2632] shadow-sm">
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse min-w-[700px]">
-                    <thead>
-                        <tr class="bg-[#f9fafb] dark:bg-gray-900/50 border-b border-[#e5e7eb] dark:border-gray-800">
-                            <th class="p-4 text-xs font-bold uppercase tracking-wider text-[#617589] dark:text-gray-400">Download ID</th>
-                            <th class="p-4 text-xs font-bold uppercase tracking-wider text-[#617589] dark:text-gray-400">Template</th>
-                            <th class="p-4 text-xs font-bold uppercase tracking-wider text-[#617589] dark:text-gray-400 text-center">Files</th>
-                            <th class="p-4 text-xs font-bold uppercase tracking-wider text-[#617589] dark:text-gray-400">Status</th>
-                            <th class="p-4 text-xs font-bold uppercase tracking-wider text-[#617589] dark:text-gray-400">Size</th>
-                            <th class="p-4 text-xs font-bold uppercase tracking-wider text-[#617589] dark:text-gray-400">Created</th>
-                            <th class="p-4 text-xs font-bold uppercase tracking-wider text-[#617589] dark:text-gray-400 text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-[#e5e7eb] dark:divide-gray-800">
-                        @forelse($downloadJobs as $job)
-                        <tr class="group hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                            <td class="p-4 text-sm font-mono text-[#111418] dark:text-white">
-                                <span class="truncate max-w-[120px] inline-block" title="{{ $job->download_id }}">{{ Str::limit($job->download_id, 12) }}</span>
-                            </td>
-                            <td class="p-4 text-sm text-[#111418] dark:text-white">
-                                {{ $job->template->name ?? '-' }}
-                            </td>
-                            <td class="p-4 text-sm text-[#111418] dark:text-white text-center">
-                                <span class="inline-flex items-center gap-1">
-                                    <span class="font-bold">{{ $job->processed_files }}</span>
-                                    <span class="text-gray-500">/</span>
-                                    <span>{{ $job->total_files }}</span>
-                                </span>
-                            </td>
-                            <td class="p-4">
-                                @if($job->status === 'pending')
-                                <span class="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600">
-                                    <span class="h-1.5 w-1.5 rounded-full bg-gray-400"></span>
-                                    Pending
-                                </span>
-                                @elseif($job->status === 'processing')
-                                <span class="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border border-blue-200 dark:border-blue-900/50">
-                                    <span class="material-symbols-outlined text-[14px] animate-spin">progress_activity</span>
-                                    Processing
-                                </span>
-                                @elseif($job->status === 'completed')
-                                <span class="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/50">
-                                    <span class="material-symbols-outlined text-[14px]">check_circle</span>
-                                    Completed
-                                </span>
-                                @elseif($job->status === 'failed')
-                                <span class="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-full text-xs font-medium bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400 border border-red-200 dark:border-red-900/50" title="{{ $job->error_message }}">
-                                    <span class="material-symbols-outlined text-[14px]">error</span>
-                                    Failed
-                                </span>
-                                @endif
-                            </td>
-                            <td class="p-4 text-sm text-[#111418] dark:text-white">
-                                {{ $job->formatted_file_size }}
-                            </td>
-                            <td class="p-4 text-sm text-[#617589] dark:text-gray-400">
-                                {{ $job->created_at->diffForHumans() }}
-                            </td>
-                            <td class="p-4 text-right">
-                                <div class="flex justify-end gap-2">
-                                    @if($job->status === 'completed' && $job->zip_path)
-                                    <a href="{{ route('download-jobs.download', $job->id) }}" class="flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg transition-colors shadow-sm">
-                                        <span class="material-symbols-outlined text-[14px]">download</span>
-                                        Download
-                                    </a>
-                                    @endif
-                                    <button wire:click="deleteDownloadJob({{ $job->id }})" wire:confirm="Hapus download job ini?" class="flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30 rounded-lg transition-colors">
-                                        <span class="material-symbols-outlined text-[14px]">delete</span>
-                                        Delete
-                                    </button>
-                                </div>
-                            </td>
-                        </tr>
-                        @empty
-                        <tr>
-                            <td colspan="7" class="p-8 text-center">
-                                <div class="flex flex-col items-center gap-2">
-                                    <span class="material-symbols-outlined text-4xl text-gray-300 dark:text-gray-600">folder_off</span>
-                                    <p class="text-gray-500 dark:text-gray-400">Belum ada download history</p>
-                                </div>
-                            </td>
-                        </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- Pagination for Download Jobs -->
-            @if($downloadJobs->hasPages())
-            <div class="flex items-center justify-between border-t border-[#e5e7eb] dark:border-gray-800 px-4 py-3 sm:px-6 bg-white dark:bg-[#1a2632] rounded-b-xl">
-                <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
-                    <div>
-                        <p class="text-sm text-gray-700 dark:text-gray-400">
-                            Showing <span class="font-bold text-[#111418] dark:text-white">{{ $downloadJobs->firstItem() }}</span>
-                            to <span class="font-bold text-[#111418] dark:text-white">{{ $downloadJobs->lastItem() }}</span>
-                            of <span class="font-bold text-[#111418] dark:text-white">{{ $downloadJobs->total() }}</span> results
-                        </p>
-                    </div>
-                    <div>
-                        {{ $downloadJobs->links() }}
-                    </div>
-                </div>
-            </div>
-            @endif
-        </div>
-    </div>
+    <!-- Download History Link - Added to Header area instead -->
 </div>
