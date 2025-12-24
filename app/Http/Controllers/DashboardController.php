@@ -15,22 +15,34 @@ class DashboardController extends Controller
     public function index(): View
     {
         // Get active template status
-        $activeTemplate = 0;
-        $templateStatus = $activeTemplate  ? 'Configured' : 'Not Configured';
+        $activeTemplate = KtmTemplate::where('status', KtmTemplate::STATUS_ACTIVE)->first();
+        $templateStatus = $activeTemplate && $activeTemplate->isConfigured() ? 'Configured' : 'Not Configured';
         $isTemplateActive = $activeTemplate !== null;
 
-        // Get student statistics
+        // Get statistics
+        $totalStrategies = 0; // Unused
+        $totalTemplates = KtmTemplate::count();
         $totalStudents = Student::count();
-        $generatedKtms = 0;
-        $failedKtms = 0;
 
-        // Calculate percentage
+        // Count generated KTMs (total cards generated)
+        $generatedKtms = \App\Models\StudentKtmStatus::generated()->count();
+
+        // Count students without generated KTM (Not Generated)
+        // We assume this means students who don't have ANY generated KTM yet
+        // OR filtering by active template would be better, but user didn't specify.
+        // Let's use: Total Students - Students who have generated at least one KTM.
+        $studentsWithKtm = \App\Models\StudentKtmStatus::generated()->distinct('student_id')->count('student_id');
+        $notGeneratedKtms = $totalStudents - $studentsWithKtm;
+
+        $failedKtms = \App\Models\StudentKtmStatus::error()->count();
+
+        // Calculate percentage (based on students coverage)
         $generatedPercentage = $totalStudents > 0
-            ? round(($generatedKtms / $totalStudents) * 100)
+            ? round(($studentsWithKtm / $totalStudents) * 100)
             : 0;
 
-        // Get recent batch activities
-        $recentActivities = BatchActivity::with('user')
+        // Get recent download history
+        $downloadHistory = \App\Models\KtmDownloadJob::with('template')
             ->orderBy('created_at', 'desc')
             ->take(5)
             ->get();
@@ -41,11 +53,13 @@ class DashboardController extends Controller
         return view('admin.dashboard', [
             'templateStatus' => $templateStatus,
             'isTemplateActive' => $isTemplateActive,
+            'totalTemplates' => $totalTemplates,
             'totalStudents' => $totalStudents,
             'generatedKtms' => $generatedKtms,
+            'notGeneratedKtms' => $notGeneratedKtms,
             'failedKtms' => $failedKtms,
             'generatedPercentage' => $generatedPercentage,
-            'recentActivities' => $recentActivities,
+            'downloadHistory' => $downloadHistory,
             'newStudentsCount' => $newStudentsCount,
         ]);
     }

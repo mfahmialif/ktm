@@ -9,16 +9,22 @@
         </div>
 
         <div class="flex items-center gap-4">
-            <!-- Search -->
-            @include('admin.partials.search')
-
-            <div class="h-6 w-px bg-gray-200 dark:bg-gray-700 hidden lg:block"></div>
-
-            <!-- Notifications -->
-            <button class="relative text-[#111418] dark:text-white hover:bg-gray-100 dark:hover:bg-[#2a3b4d] p-2 rounded-full transition-colors">
-                <span class="material-symbols-outlined">notifications</span>
-                <span class="absolute top-2 right-2.5 w-2 h-2 bg-red-500 rounded-full border border-white dark:border-[#1a2632]"></span>
-            </button>
+            <!-- Date & Time -->
+            <div x-data="{ 
+                date: new Date(),
+                init() {
+                    setInterval(() => this.date = new Date(), 1000);
+                },
+                get formattedDate() {
+                    return this.date.toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+                },
+                get formattedTime() {
+                    return this.date.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit', second: '2-digit' }).replace(/\./g, ':');
+                }
+            }" class="flex flex-col items-end text-right mr-2 hidden md:flex">
+                <span class="text-xs font-medium text-gray-500 dark:text-slate-400" x-text="formattedDate"></span>
+                <span class="text-sm font-bold text-[#111418] dark:text-white font-mono" x-text="formattedTime"></span>
+            </div>
 
             <!-- User Menu -->
             @include('admin.partials.user-menu')
