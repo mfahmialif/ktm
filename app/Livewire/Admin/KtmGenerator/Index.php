@@ -2,9 +2,11 @@
 
 namespace App\Livewire\Admin\KtmGenerator;
 
+use App\Jobs\CreateKtmZipJob;
 use App\Jobs\GenerateKtmBatchJob;
 use App\Models\AcademicYear;
 use App\Models\KtmBatchJob;
+use App\Models\KtmDownloadJob;
 use App\Models\KtmTemplate;
 use App\Models\Student;
 use App\Models\StudentKtmStatus;
@@ -29,6 +31,9 @@ class Index extends Component
 
     // For batch progress tracking
     public $activeBatchId = null;
+
+    // For download job progress tracking
+    public $activeDownloadId = null;
 
     protected $queryString = [
         'search' => ['except' => ''],
@@ -393,6 +398,154 @@ class Index extends Component
         }
     }
 
+    /**
+     * Download selected students' KTMs as ZIP
+     */
+    public function downloadBulk()
+    {
+        try {
+            if (empty($this->selectedStudents)) {
+                session()->flash('error', 'Tidak ada mahasiswa yang dipilih.');
+                return;
+            }
+
+            $template = $this->getSelectedTemplate();
+            if (!$template) {
+                session()->flash('error', 'Silakan pilih template terlebih dahulu.');
+                return;
+            }
+
+            // Get student IDs
+            $studentIds = Student::whereIn('id', $this->selectedStudents)
+                ->pluck('id')
+                ->toArray();
+
+            if (empty($studentIds)) {
+                session()->flash('error', 'Tidak ada mahasiswa yang ditemukan.');
+                return;
+            }
+
+            // Count how many students actually have generated KTMs
+            $totalFiles = StudentKtmStatus::whereIn('student_id', $studentIds)
+                ->where('ktm_template_id', $template->id)
+                ->where('status', 'generated')
+                ->whereNotNull('file_path')
+                ->count();
+
+            if ($totalFiles === 0) {
+                session()->flash('error', 'Tidak ada KTM yang ter-generate untuk mahasiswa yang dipilih.');
+                return;
+            }
+
+            // Create download job record
+            $downloadId = KtmDownloadJob::generateDownloadId();
+            $downloadJob = KtmDownloadJob::create([
+                'ktm_template_id' => $template->id,
+                'user_id' => auth()->id(),
+                'download_id' => $downloadId,
+                'filter_criteria' => [
+                    'selected_students' => true,
+                    'count' => count($studentIds),
+                ],
+                'total_files' => $totalFiles,
+                'status' => 'pending',
+            ]);
+
+            $this->activeDownloadId = $downloadId;
+
+            // Dispatch ZIP creation job
+            CreateKtmZipJob::dispatch($studentIds, $template->id, $downloadId);
+
+            $this->selectedStudents = [];
+            $this->selectAll = false;
+
+            session()->flash('success', "Proses download ZIP dimulai untuk {$totalFiles} KTM. Lihat progress di bawah.");
+        } catch (\Exception $e) {
+            session()->flash('error', 'Gagal menjadwalkan download: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Download all  filtered students' KTMs as ZIP
+     */
+    public function downloadAll()
+    {
+        try {
+            $template = $this->getSelectedTemplate();
+            if (!$template) {
+                session()->flash('error', 'Silakan pilih template terlebih dahulu.');
+                return;
+            }
+
+            // Get all student IDs based on current filters
+            $studentIds = $this->getStudentsQuery()
+                ->pluck('id')
+                ->toArray();
+
+            if (empty($studentIds)) {
+                session()->flash('error', 'Tidak ada mahasiswa yang ditemukan.');
+                return;
+            }
+
+            // Count how many students actually have generated KTMs
+            $totalFiles = StudentKtmStatus::whereIn('student_id', $studentIds)
+                ->where('ktm_template_id', $template->id)
+                ->where('status', 'generated')
+                ->whereNotNull('file_path')
+                ->count();
+
+            if ($totalFiles === 0) {
+                session()->flash('error', 'Tidak ada KTM yang ter-generate untuk filter saat ini.');
+                return;
+            }
+
+            // Create download job record
+            $downloadId = KtmDownloadJob::generateDownloadId();
+            $downloadJob = KtmDownloadJob::create([
+                'ktm_template_id' => $template->id,
+                'user_id' => auth()->id(),
+                'download_id' => $downloadId,
+                'filter_criteria' => [
+                    'angkatan' => $this->filterAngkatan,
+                    'prodi' => $this->filterProdi,
+                    'status' => $this->filterStatus,
+                    'search' => $this->search,
+                ],
+                'total_files' => $totalFiles,
+                'status' => 'pending',
+            ]);
+
+            $this->activeDownloadId = $downloadId;
+
+            // Dispatch ZIP creation job
+            CreateKtmZipJob::dispatch($studentIds, $template->id, $downloadId);
+
+            session()->flash('success', "Proses download ZIP dimulai untuk {$totalFiles} KTM. Lihat progress di bawah.");
+        } catch (\Exception $e) {
+            session()->flash('error', 'Gagal menjadwalkan download: ' . $e->getMessage());
+        }
+    }
+
+    public function getActiveDownloadProperty()
+    {
+        if ($this->activeDownloadId) {
+            return KtmDownloadJob::where('download_id', $this->activeDownloadId)->first();
+        }
+
+        // Check for any active download for current template
+        $templateId = $this->filterTemplate ?: $this->selectedTemplateId;
+        if ($templateId) {
+            return KtmDownloadJob::getActiveDownload((int) $templateId);
+        }
+
+        return null;
+    }
+
+    public function dismissDownload()
+    {
+        $this->activeDownloadId = null;
+    }
+
     public function getActiveBatchProperty()
     {
         if ($this->activeBatchId) {
@@ -422,6 +575,7 @@ class Index extends Component
             'prodiList' => $this->prodiList,
             'angkatanList' => $this->angkatanList,
             'activeBatch' => $this->activeBatch,
+            'activeDownload' => $this->activeDownload,
         ]);
     }
 }

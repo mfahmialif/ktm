@@ -73,6 +73,65 @@
     </div>
     @endif
 
+    <!-- Progress Bar for Download ZIP -->
+    @if ($activeDownload)
+    <div class="mb-4 p-4 rounded-xl bg-gradient-to-r from-emerald-50 to-emerald-100/50 dark:from-emerald-900/20 dark:to-emerald-800/20 border border-emerald-500/30">
+        <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-3">
+                @if ($activeDownload->isRunning())
+                <span class="material-symbols-outlined text-emerald-600 animate-spin">progress_activity</span>
+                <span class="text-sm font-bold text-emerald-700 dark:text-emerald-400">Creating ZIP...</span>
+                @else
+                <span class="material-symbols-outlined text-emerald-500">check_circle</span>
+                <span class="text-sm font-bold text-emerald-600 dark:text-emerald-400">ZIP Ready!</span>
+                @endif
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="text-right">
+                    <span class="text-2xl font-black text-emerald-600">{{ $activeDownload->processed_files }}</span>
+                    <span class="text-sm text-gray-500">/ {{ $activeDownload->total_files }}</span>
+                </div>
+                @if ($activeDownload->isCompleted())
+                <a href="{{ route('download-jobs.download', $activeDownload->id) }}" class="flex items-center gap-1 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-lg transition-colors shadow-sm">
+                    <span class="material-symbols-outlined text-[16px]">download</span>
+                    Download ZIP
+                </a>
+                @endif
+                @if (!$activeDownload->isRunning())
+                <button wire:click="dismissDownload" class="p-1 text-gray-400 hover:text-gray-600 transition-colors">
+                    <span class="material-symbols-outlined text-[18px]">close</span>
+                </button>
+                @endif
+            </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="relative h-4 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+            <div class="absolute inset-0 h-full bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all duration-500 ease-out rounded-full" style="width: {{ $activeDownload->progress_percentage }}%">
+            </div>
+            <div class="absolute inset-0 flex items-center justify-center">
+                <span class="text-[10px] font-bold text-white drop-shadow-sm">{{ $activeDownload->progress_percentage }}%</span>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="flex items-center gap-4 mt-3 text-xs">
+            @if ($activeDownload->isCompleted())
+            <span class="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+                <span class="material-symbols-outlined text-[14px]">folder_zip</span>
+                Size: {{ $activeDownload->formatted_file_size }}
+            </span>
+            @endif
+            @if ($activeDownload->template)
+            <span class="inline-flex items-center gap-1 text-gray-500">
+                <span class="material-symbols-outlined text-[14px]">badge</span>
+                {{ $activeDownload->template->name }}
+            </span>
+            @endif
+        </div>
+    </div>
+    @endif
+
     <!-- Breadcrumb -->
     <div class="flex flex-wrap gap-2 mb-4">
         <a class="text-[#617589] dark:text-gray-400 text-sm font-medium hover:text-primary" href="{{ route('dashboard') }}">Dashboard</a>
@@ -101,12 +160,20 @@
                     </div>
                 </div>
             </div>
-            <button type="button" wire:click="generateAll" wire:confirm="Generate KTM untuk semua mahasiswa yang ready?" wire:loading.attr="disabled" wire:target="generateAll" class="flex shrink-0 min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-11 px-6 bg-primary text-white text-sm font-bold hover:bg-blue-600 transition-all shadow-md gap-2 w-full sm:w-auto disabled:opacity-50 disabled:cursor-not-allowed">
-                <span wire:loading.remove wire:target="generateAll" class="material-symbols-outlined text-[20px]">print_connect</span>
-                <span wire:loading wire:target="generateAll" class="material-symbols-outlined text-[20px] animate-spin">progress_activity</span>
-                <span wire:loading.remove wire:target="generateAll">Generate All KTMs</span>
-                <span wire:loading wire:target="generateAll">Generating...</span>
-            </button>
+            <div class="flex gap-2 w-full sm:w-auto">
+                <button type="button" wire:click="generateAll" wire:confirm="Generate KTM untuk semua mahasiswa yang ready?" wire:loading.attr="disabled" wire:target="generateAll" class="flex shrink-0 min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-11 px-6 bg-primary text-white text-sm font-bold hover:bg-blue-600 transition-all shadow-md gap-2 flex-1 sm:flex-initial disabled:opacity-50 disabled:cursor-not-allowed">
+                    <span wire:loading.remove wire:target="generateAll" class="material-symbols-outlined text-[20px]">print_connect</span>
+                    <span wire:loading wire:target="generateAll" class="material-symbols-outlined text-[20px] animate-spin">progress_activity</span>
+                    <span wire:loading.remove wire:target="generateAll">Generate All</span>
+                    <span wire:loading wire:target="generateAll">Generating...</span>
+                </button>
+                <button type="button" wire:click="downloadAll" wire:confirm="Download semua KTM yang sudah ter-generate?" wire:loading.attr="disabled" wire:target="downloadAll" class="flex shrink-0 min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-11 px-6 bg-emerald-600 text-white text-sm font-bold hover:bg-emerald-700 transition-all shadow-md gap-2 flex-1 sm:flex-initial disabled:opacity-50 disabled:cursor-not-allowed">
+                    <span wire:loading.remove wire:target="downloadAll" class="material-symbols-outlined text-[20px]">download</span>
+                    <span wire:loading wire:target="downloadAll" class="material-symbols-outlined text-[20px] animate-spin">progress_activity</span>
+                    <span wire:loading.remove wire:target="downloadAll">Download All</span>
+                    <span wire:loading wire:target="downloadAll">Processing...</span>
+                </button>
+            </div>
         </div>
     </div>
 
@@ -170,12 +237,20 @@
     {{-- <div class="flex items-center justify-between bg-primary/10 border border-primary/30 p-4 rounded-xl mb-4"> --}}
     <div class="flex items-center justify-between bg-primary/10 border border-primary/30 p-4 rounded-xl mb-4 {{ count($selectedStudents) === 0 ? 'hidden' : '' }}">
         <span class="text-sm font-medium text-primary">{{ count($selectedStudents) }} mahasiswa dipilih</span>
-        <button type="button" wire:click="generateBulk" wire:confirm="Generate KTM untuk {{ count($selectedStudents) }} mahasiswa yang dipilih?" wire:loading.attr="disabled" wire:target="generateBulk" class="flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-bold rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-            <span wire:loading.remove wire:target="generateBulk" class="material-symbols-outlined text-[18px]">print_connect</span>
-            <span wire:loading wire:target="generateBulk" class="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
-            <span wire:loading.remove wire:target="generateBulk">Generate Selected</span>
-            <span wire:loading wire:target="generateBulk">Generating...</span>
-        </button>
+        <div class="flex gap-2">
+            <button type="button" wire:click="generateBulk" wire:confirm="Generate KTM untuk {{ count($selectedStudents) }} mahasiswa yang dipilih?" wire:loading.attr="disabled" wire:target="generateBulk" class="flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-bold rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                <span wire:loading.remove wire:target="generateBulk" class="material-symbols-outlined text-[18px]">print_connect</span>
+                <span wire:loading wire:target="generateBulk" class="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
+                <span wire:loading.remove wire:target="generateBulk">Generate Selected</span>
+                <span wire:loading wire:target="generateBulk">Generating...</span>
+            </button>
+            <button type="button" wire:click="downloadBulk" wire:confirm="Download KTM untuk {{ count($selectedStudents) }} mahasiswa yang dipilih?" wire:loading.attr="disabled" wire:target="downloadBulk" class="flex items-center gap-2 px-4 py-2 bg-emerald-600 text-white text-sm font-bold rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                <span wire:loading.remove wire:target="downloadBulk" class="material-symbols-outlined text-[18px]">download</span>
+                <span wire:loading wire:target="downloadBulk" class="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
+                <span wire:loading.remove wire:target="downloadBulk">Download Selected</span>
+                <span wire:loading wire:target="downloadBulk">Processing...</span>
+            </button>
+        </div>
     </div>
     {{-- @endif --}}
 
@@ -246,9 +321,19 @@
                         </td>
                         <td class="p-4 text-right">
                             <div class="flex justify-end gap-2">
-                                <button class="p-2 text-gray-500 hover:text-primary hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors" title="Preview KTM">
+                                @php
+                                $ktmStatus = $this->getStudentKtmStatus($student);
+                                @endphp
+
+                                @if($ktmStatus && $ktmStatus->file_path && Storage::disk('public')->exists($ktmStatus->file_path))
+                                <a href="{{ Storage::url($ktmStatus->file_path) }}" target="_blank" class="p-2 text-primary hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors" title="View KTM">
                                     <span class="material-symbols-outlined text-[20px]">visibility</span>
+                                </a>
+                                @else
+                                <button disabled class="p-2 text-gray-300 dark:text-gray-600 cursor-not-allowed rounded-lg" title="No KTM generated yet">
+                                    <span class="material-symbols-outlined text-[20px]">visibility_off</span>
                                 </button>
+                                @endif
 
                                 @if($status === 'ready')
                                 <button type="button" wire:click="generateSingle({{ $student->id }})" wire:loading.attr="disabled" wire:target="generateSingle({{ $student->id }})" class="flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-white bg-primary hover:bg-blue-600 rounded-lg transition-colors shadow-sm disabled:opacity-50">
