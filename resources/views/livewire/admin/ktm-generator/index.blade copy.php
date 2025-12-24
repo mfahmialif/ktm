@@ -98,9 +98,8 @@
     </div>
 
     <!-- Bulk Action -->
-    {{-- @if(count($selectedStudents) > 0) --}}
-    {{-- <div class="flex items-center justify-between bg-primary/10 border border-primary/30 p-4 rounded-xl mb-4"> --}}
-    <div class="flex items-center justify-between bg-primary/10 border border-primary/30 p-4 rounded-xl mb-4 {{ count($selectedStudents) === 0 ? 'hidden' : '' }}">
+    @if(count($selectedStudents) > 0)
+    <div class="flex items-center justify-between bg-primary/10 border border-primary/30 p-4 rounded-xl mb-4">
         <span class="text-sm font-medium text-primary">{{ count($selectedStudents) }} mahasiswa dipilih</span>
         <button type="button" wire:click="generateBulk" wire:confirm="Generate KTM untuk {{ count($selectedStudents) }} mahasiswa yang dipilih?" wire:loading.attr="disabled" wire:target="generateBulk" class="flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-bold rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
             <span wire:loading.remove wire:target="generateBulk" class="material-symbols-outlined text-[18px]">print_connect</span>
@@ -109,7 +108,7 @@
             <span wire:loading wire:target="generateBulk">Generating...</span>
         </button>
     </div>
-    {{-- @endif --}}
+    @endif
 
     <!-- Table -->
     <div class="w-full overflow-hidden rounded-xl border border-[#e5e7eb] dark:border-gray-800 bg-white dark:bg-[#1a2632] shadow-sm">

@@ -20,8 +20,8 @@ class Index extends Component
     public $selectedStudents = [];
     public $selectAll = false;
 
-    // For selecting which academic year template to use when generating
-    public $generateAcademicYear = '';
+    // For selecting which template to use when generating
+    public $selectedTemplateId = '';
 
     protected $queryString = [
         'search' => ['except' => ''],
@@ -32,9 +32,10 @@ class Index extends Component
 
     public function mount()
     {
-        $activeYear = AcademicYear::active()->first();
-        if ($activeYear) {
-            $this->generateAcademicYear = $activeYear->id;
+        // Set default selected template to first active one
+        $activeTemplate = KtmTemplate::where('is_active', true)->first();
+        if ($activeTemplate) {
+            $this->selectedTemplateId = $activeTemplate->id;
         }
     }
 
@@ -102,9 +103,9 @@ class Index extends Component
         return $this->getStudentsQuery()->paginate(10);
     }
 
-    public function getAcademicYearsProperty()
+    public function getTemplatesProperty()
     {
-        return AcademicYear::orderBy('code', 'desc')->get();
+        return KtmTemplate::where('is_active', true)->orderBy('name')->get();
     }
 
     public function getProdiListProperty()
@@ -140,14 +141,14 @@ class Index extends Component
     }
 
     /**
-     * Get the active template for the selected academic year
+     * Get the selected template
      */
-    protected function getActiveTemplate(): ?KtmTemplate
+    protected function getSelectedTemplate(): ?KtmTemplate
     {
-        // First try to get template linked to academic year
-        $academicYear = AcademicYear::find($this->generateAcademicYear);
-
-        // Get any active template for now (can be enhanced to link template to academic year)
+        if ($this->selectedTemplateId) {
+            return KtmTemplate::find($this->selectedTemplateId);
+        }
+        // Fallback to first active template
         return KtmTemplate::where('is_active', true)->first();
     }
 
@@ -158,14 +159,15 @@ class Index extends Component
     {
         $service = new KtmGeneratorService();
 
-        $template = $this->getActiveTemplate();
+        $template = $this->getSelectedTemplate();
         if (!$template) {
-            throw new \Exception('Tidak ada template KTM yang aktif. Silakan aktifkan template terlebih dahulu.');
+            throw new \Exception('Silakan pilih template terlebih dahulu.');
         }
 
         $service->setTemplate($template);
 
-        $academicYear = AcademicYear::find($this->generateAcademicYear);
+        // Use active academic year for output folder
+        $academicYear = AcademicYear::active()->first();
         if ($academicYear) {
             $service->setAcademicYear($academicYear);
         }
@@ -204,12 +206,26 @@ class Index extends Component
     public function generateBulk()
     {
         try {
+            if (empty($this->selectedStudents)) {
+                session()->flash('error', 'Tidak ada mahasiswa yang dipilih.');
+                return;
+            }
+
             $service = $this->getGeneratorService();
 
+            // Fix: Handle null ktm_status properly
             $students = Student::whereIn('id', $this->selectedStudents)
-                ->where('ktm_status', '!=', 'generated')
+                ->where(function ($query) {
+                    $query->whereNull('ktm_status')
+                        ->orWhere('ktm_status', '!=', 'generated');
+                })
                 ->get()
                 ->all();
+
+            if (empty($students)) {
+                session()->flash('error', 'Semua mahasiswa yang dipilih sudah memiliki KTM.');
+                return;
+            }
 
             $results = $service->generateBatch($students);
 
@@ -226,15 +242,30 @@ class Index extends Component
         }
     }
 
+    public function testClick()
+    {
+        dd('LIVEWIRE MASUK');
+    }
+
+
     public function generateAll()
     {
         try {
             $service = $this->getGeneratorService();
 
+            // Fix: Handle null ktm_status properly
             $students = $this->getStudentsQuery()
-                ->where('ktm_status', '!=', 'generated')
+                ->where(function ($query) {
+                    $query->whereNull('ktm_status')
+                        ->orWhere('ktm_status', '!=', 'generated');
+                })
                 ->get()
                 ->all();
+
+            if (empty($students)) {
+                session()->flash('error', 'Tidak ada mahasiswa yang perlu di-generate.');
+                return;
+            }
 
             $results = $service->generateBatch($students);
 
@@ -252,7 +283,7 @@ class Index extends Component
     {
         return view('livewire.admin.ktm-generator.index', [
             'students' => $this->students,
-            'academicYears' => $this->academicYears,
+            'templates' => $this->templates,
             'prodiList' => $this->prodiList,
             'angkatanList' => $this->angkatanList,
         ]);
