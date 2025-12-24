@@ -41,7 +41,7 @@ class Index extends Component
     public function mount()
     {
         // Set default selected template to first active one
-        $activeTemplate = KtmTemplate::where('is_active', true)->first();
+        $activeTemplate = KtmTemplate::latest()->first();
         if ($activeTemplate) {
             $this->selectedTemplateId = $activeTemplate->id;
             $this->filterTemplate = $activeTemplate->id; // Also set as filter
@@ -154,7 +154,7 @@ class Index extends Component
 
     public function getTemplatesProperty()
     {
-        return KtmTemplate::where('is_active', true)->orderBy('name')->get();
+        return KtmTemplate::orderBy('name')->get();
     }
 
     public function getAllTemplatesProperty()
@@ -207,7 +207,7 @@ class Index extends Component
             return KtmTemplate::find($this->selectedTemplateId);
         }
         // Fallback to first active template
-        return KtmTemplate::where('is_active', true)->first();
+        return KtmTemplate::latest()->first();
     }
 
     /**

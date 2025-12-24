@@ -3,8 +3,7 @@ $menuItems = [
 ['route' => 'dashboard', 'icon' => 'dashboard', 'label' => 'Dashboard'],
 ['route' => 'academic-years.*', 'icon' => 'calendar_month', 'label' => 'Tahun Akademik', 'href' => route('academic-years.index')],
 ['route' => 'templates.*', 'icon' => 'description', 'label' => 'Template KTM', 'href' => route('templates.index')],
-['route' => 'ktm-generator.*', 'icon' => 'id_card', 'label' => 'Generate KTM', 'href' => route('ktm-generator.index')],
-['route' => 'download.*', 'icon' => 'download', 'label' => 'Download KTM', 'href' => '#'],
+['route' => 'ktm-generator.*', 'icon' => 'id_card', 'label' => 'Generate & Download KTM', 'href' => route('ktm-generator.index')],
 ];
 @endphp
 

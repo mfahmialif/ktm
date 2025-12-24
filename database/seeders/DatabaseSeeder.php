@@ -28,7 +28,6 @@ class DatabaseSeeder extends Seeder
             'name' => 'Default Template 2024',
             'front_template' => 'templates/front-default.png',
             'back_template' => 'templates/back-default.png',
-            'is_active' => true,
             'settings' => [
                 'orientation' => 'portrait',
                 'width' => 85.6,
@@ -62,9 +61,6 @@ class DatabaseSeeder extends Seeder
                 'class' => $classes[array_rand($classes)],
                 'prodi' => $prodis[array_rand($prodis)],
                 'photo' => null,
-                'ktm_status' => $status,
-                'ktm_generated_at' => $generatedAt,
-                'ktm_error_message' => $errorMessage,
                 'created_at' => now()->subDays(rand(1, 90)),
                 'updated_at' => now(),
             ];

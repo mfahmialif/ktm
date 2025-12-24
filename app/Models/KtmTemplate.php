@@ -20,13 +20,11 @@ class KtmTemplate extends Model
         'name',
         'front_template',
         'back_template',
-        'is_active',
         'status',
         'settings',
     ];
 
     protected $casts = [
-        'is_active' => 'boolean',
         'settings' => 'array',
     ];
 
@@ -44,22 +42,6 @@ class KtmTemplate extends Model
     public function studentKtmStatuses(): HasMany
     {
         return $this->hasMany(StudentKtmStatus::class);
-    }
-
-    /**
-     * Scope for active template.
-     */
-    public function scopeActive($query)
-    {
-        return $query->where('is_active', true);
-    }
-
-    /**
-     * Get the currently active template.
-     */
-    public static function getActive(): ?self
-    {
-        return static::active()->first();
     }
 
     /**
