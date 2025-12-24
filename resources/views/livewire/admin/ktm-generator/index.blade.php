@@ -353,6 +353,12 @@
                                     <span wire:loading.remove wire:target="generateSingle({{ $student->id }})">Regenerate</span>
                                     <span wire:loading wire:target="generateSingle({{ $student->id }})">Processing...</span>
                                 </button>
+                                @elseif($status === 'error')
+                                <button type="button" wire:click="generateSingle({{ $student->id }})" wire:loading.attr="disabled" wire:target="generateSingle({{ $student->id }})" class="flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 rounded-lg transition-colors disabled:opacity-50">
+                                    <span wire:loading wire:target="generateSingle({{ $student->id }})" class="material-symbols-outlined text-[14px] animate-spin">progress_activity</span>
+                                    <span wire:loading.remove wire:target="generateSingle({{ $student->id }})">Generate</span>
+                                    <span wire:loading wire:target="generateSingle({{ $student->id }})">Processing...</span>
+                                </button>
                                 @endif
                             </div>
                         </td>
