@@ -1,0 +1,211 @@
+@php use Illuminate\Support\Facades\Storage; @endphp
+<div>
+    <!-- Flash Message -->
+    @if (session('success'))
+    <div class="mb-4 p-4 rounded-lg bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 flex items-center gap-2" x-data="{ show: true }" x-show="show" x-init="setTimeout(() => show = false, 3000)" x-transition>
+        <span class="material-symbols-outlined icon-filled text-emerald-500">check_circle</span>
+        {{ session('success') }}
+    </div>
+    @endif
+
+    <!-- Breadcrumb -->
+    <div class="flex flex-wrap gap-2 mb-4">
+        <a class="text-[#617589] dark:text-gray-400 text-sm font-medium hover:text-primary" href="{{ route('dashboard') }}">Dashboard</a>
+        <span class="text-[#617589] dark:text-gray-500 text-sm font-medium">/</span>
+        <span class="text-[#111418] dark:text-white text-sm font-medium">Generate KTM</span>
+    </div>
+
+    <!-- Page Header -->
+    <div class="flex flex-col md:flex-row md:justify-between md:items-end gap-6 mb-6">
+        <div class="flex flex-col gap-2 max-w-2xl">
+            <h1 class="text-[#111418] dark:text-white text-3xl md:text-4xl font-black leading-tight tracking-[-0.033em]">Student Data & KTM Generation</h1>
+            <p class="text-[#617589] dark:text-gray-400 text-base font-normal">Fetch latest student data, review details, and generate ID cards in bulk or individually.</p>
+        </div>
+        <div class="flex flex-col sm:flex-row gap-4 items-end w-full md:w-auto">
+            <div class="flex flex-col gap-1.5 w-full sm:w-auto flex-1">
+                <label class="text-xs font-bold text-[#617589] dark:text-gray-400 uppercase tracking-wider">Academic Year</label>
+                <div class="relative">
+                    <select wire:model.live="filterAcademicYear" class="w-full sm:w-[220px] appearance-none bg-white dark:bg-[#1a2632] border border-[#e5e7eb] dark:border-gray-700 text-[#111418] dark:text-white text-sm font-bold rounded-lg h-11 pl-4 pr-10 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary">
+                        <option value="">All Years</option>
+                        @foreach($academicYears as $year)
+                        <option value="{{ $year->id }}">{{ $year->code }} - {{ $year->name }}</option>
+                        @endforeach
+                    </select>
+                    <div class="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#617589]">
+                        <span class="material-symbols-outlined">expand_more</span>
+                    </div>
+                </div>
+            </div>
+            <button wire:click="generateAll" wire:confirm="Generate KTM untuk semua mahasiswa yang ready?" class="flex shrink-0 min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-11 px-6 bg-primary text-white text-sm font-bold hover:bg-blue-600 transition-all shadow-md gap-2 w-full sm:w-auto">
+                <span class="material-symbols-outlined text-[20px]">print_connect</span>
+                <span>Generate All KTMs</span>
+            </button>
+        </div>
+    </div>
+
+    <!-- Search & Filters -->
+    <div class="flex flex-col md:flex-row gap-4 justify-between items-center bg-white dark:bg-[#1a2632] p-4 rounded-xl shadow-sm border border-[#e5e7eb] dark:border-gray-800 mb-6">
+        <label class="flex flex-col h-11 w-full md:max-w-md">
+            <div class="flex w-full flex-1 items-stretch rounded-lg h-full group">
+                <div class="text-[#617589] flex border-none bg-[#f0f2f4] dark:bg-gray-800 items-center justify-center pl-4 rounded-l-lg">
+                    <span class="material-symbols-outlined text-[20px]">search</span>
+                </div>
+                <input wire:model.live.debounce.300ms="search" class="flex w-full min-w-0 flex-1 rounded-lg text-[#111418] dark:text-white focus:outline-none focus:ring-2 focus:ring-primary border-none bg-[#f0f2f4] dark:bg-gray-800 h-full placeholder:text-[#617589] px-4 rounded-l-none pl-2 text-sm" placeholder="Search by NIM, Name or Prodi..." />
+            </div>
+        </label>
+        <div class="flex gap-2 flex-wrap items-center w-full md:w-auto overflow-x-auto pb-1 md:pb-0 justify-start md:justify-end">
+            <!-- Prodi Filter -->
+            <div class="relative">
+                <select wire:model.live="filterProdi" class="appearance-none h-9 rounded-lg bg-[#f0f2f4] dark:bg-gray-800 text-[#111418] dark:text-white pl-4 pr-8 text-sm font-medium border-none">
+                    <option value="">All Prodi</option>
+                    @foreach($prodiList as $prodi)
+                    <option value="{{ $prodi }}">{{ $prodi }}</option>
+                    @endforeach
+                </select>
+                <span class="material-symbols-outlined text-[18px] absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">expand_more</span>
+            </div>
+            <!-- Status Filter -->
+            <div class="relative">
+                <select wire:model.live="filterStatus" class="appearance-none h-9 rounded-lg bg-[#f0f2f4] dark:bg-gray-800 text-[#111418] dark:text-white pl-4 pr-8 text-sm font-medium border-none">
+                    <option value="">All Status</option>
+                    <option value="ready">Ready</option>
+                    <option value="generated">Generated</option>
+                    <option value="missing_photo">Missing Photo</option>
+                </select>
+                <span class="material-symbols-outlined text-[18px] absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">expand_more</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bulk Action -->
+    @if(count($selectedStudents) > 0)
+    <div class="flex items-center justify-between bg-primary/10 border border-primary/30 p-4 rounded-xl mb-4">
+        <span class="text-sm font-medium text-primary">{{ count($selectedStudents) }} mahasiswa dipilih</span>
+        <button wire:click="generateBulk" class="flex items-center gap-2 px-4 py-2 bg-primary text-white text-sm font-bold rounded-lg hover:bg-blue-600 transition-colors">
+            <span class="material-symbols-outlined text-[18px]">print_connect</span>
+            Generate Selected
+        </button>
+    </div>
+    @endif
+
+    <!-- Table -->
+    <div class="w-full overflow-hidden rounded-xl border border-[#e5e7eb] dark:border-gray-800 bg-white dark:bg-[#1a2632] shadow-sm">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse min-w-[800px]">
+                <thead>
+                    <tr class="bg-[#f9fafb] dark:bg-gray-900/50 border-b border-[#e5e7eb] dark:border-gray-800">
+                        <th class="p-4 w-12 text-center">
+                            <input type="checkbox" wire:model.live="selectAll" class="rounded border-gray-300 text-primary focus:ring-primary h-4 w-4 cursor-pointer" />
+                        </th>
+                        <th class="p-4 text-xs font-bold uppercase tracking-wider text-[#617589] dark:text-gray-400">NIM</th>
+                        <th class="p-4 text-xs font-bold uppercase tracking-wider text-[#617589] dark:text-gray-400">Student Name</th>
+                        <th class="p-4 text-xs font-bold uppercase tracking-wider text-[#617589] dark:text-gray-400">Study Program</th>
+                        <th class="p-4 text-xs font-bold uppercase tracking-wider text-[#617589] dark:text-gray-400">Angkatan</th>
+                        <th class="p-4 text-xs font-bold uppercase tracking-wider text-[#617589] dark:text-gray-400">Status</th>
+                        <th class="p-4 text-xs font-bold uppercase tracking-wider text-[#617589] dark:text-gray-400 text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-[#e5e7eb] dark:divide-gray-800">
+                    @forelse($students as $student)
+                    @php $status = $this->getStudentStatus($student); @endphp
+                    <tr class="group hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                        <td class="p-4 text-center">
+                            <input type="checkbox" wire:model.live="selectedStudents" value="{{ $student->id }}" class="rounded border-gray-300 text-primary focus:ring-primary h-4 w-4 cursor-pointer" />
+                        </td>
+                        <td class="p-4 text-sm font-medium text-[#111418] dark:text-white font-mono">{{ $student->nim }}</td>
+                        <td class="p-4">
+                            <div class="flex items-center gap-3">
+                                @if($student->photo)
+                                <div class="h-9 w-9 rounded-full bg-gray-200 dark:bg-gray-700 bg-cover bg-center border border-gray-100 dark:border-gray-700 shadow-sm" style="background-image: url('{{ Storage::url($student->photo) }}');"></div>
+                                @else
+                                <div class="h-9 w-9 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-gray-400 text-xs font-bold border border-gray-200 dark:border-gray-700">
+                                    {{ strtoupper(substr($student->name, 0, 2)) }}
+                                </div>
+                                @endif
+                                <div class="flex flex-col">
+                                    <span class="text-sm font-bold text-[#111418] dark:text-white">{{ $student->name }}</span>
+                                    <span class="text-xs text-[#617589] dark:text-gray-500">{{ $student->email ?? '-' }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="p-4 text-sm text-[#111418] dark:text-white">{{ $student->prodi ?? $student->major ?? '-' }}</td>
+                        <td class="p-4 text-sm text-[#111418] dark:text-white">{{ $student->angkatan ?? '-' }}</td>
+                        <td class="p-4">
+                            @if($status === 'ready')
+                            <span class="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-full text-xs font-medium bg-emerald-100 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/50">
+                                <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                Ready
+                            </span>
+                            @elseif($status === 'generated')
+                            <span class="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400 border border-blue-200 dark:border-blue-900/50">
+                                <span class="material-symbols-outlined text-[14px]">check_circle</span>
+                                Generated
+                            </span>
+                            @else
+                            <span class="inline-flex items-center gap-1.5 py-1 px-2.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 dark:bg-amber-900/30 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50">
+                                <span class="material-symbols-outlined text-[14px]">warning</span>
+                                Missing Photo
+                            </span>
+                            @endif
+                        </td>
+                        <td class="p-4 text-right">
+                            <div class="flex justify-end gap-2">
+                                @if($status !== 'missing_photo')
+                                <button class="p-2 text-gray-500 hover:text-primary hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors" title="Preview KTM">
+                                    <span class="material-symbols-outlined text-[20px]">visibility</span>
+                                </button>
+                                @else
+                                <button class="p-2 text-gray-300 dark:text-gray-600 cursor-not-allowed rounded-lg" disabled title="Preview unavailable">
+                                    <span class="material-symbols-outlined text-[20px]">visibility_off</span>
+                                </button>
+                                @endif
+
+                                @if($status === 'ready')
+                                <button wire:click="generateSingle({{ $student->id }})" class="flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-white bg-primary hover:bg-blue-600 rounded-lg transition-colors shadow-sm">
+                                    Generate
+                                </button>
+                                @elseif($status === 'generated')
+                                <button wire:click="generateSingle({{ $student->id }})" class="flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-primary bg-primary/10 hover:bg-primary/20 rounded-lg transition-colors">
+                                    Regenerate
+                                </button>
+                                @else
+                                <button class="flex items-center gap-1 px-3 py-1.5 text-xs font-bold text-gray-400 bg-gray-100 dark:bg-gray-700/50 cursor-not-allowed rounded-lg" disabled>
+                                    Generate
+                                </button>
+                                @endif
+                            </div>
+                        </td>
+                    </tr>
+                    @empty
+                    <tr>
+                        <td colspan="7" class="p-8 text-center">
+                            <div class="flex flex-col items-center gap-2">
+                                <span class="material-symbols-outlined text-4xl text-gray-300 dark:text-gray-600">person_off</span>
+                                <p class="text-gray-500 dark:text-gray-400">Tidak ada data mahasiswa</p>
+                            </div>
+                        </td>
+                    </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Pagination -->
+        @if($students->hasPages())
+        <div class="flex items-center justify-between border-t border-[#e5e7eb] dark:border-gray-800 px-4 py-3 sm:px-6 bg-white dark:bg-[#1a2632] rounded-b-xl">
+            <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+                <div>
+                    <p class="text-sm text-gray-700 dark:text-gray-400">
+                        Showing <span class="font-bold text-[#111418] dark:text-white">{{ $students->firstItem() }}</span>
+                        to <span class="font-bold text-[#111418] dark:text-white">{{ $students->lastItem() }}</span>
+                        of <span class="font-bold text-[#111418] dark:text-white">{{ $students->total() }}</span> results
+                    </p>
+                </div>
+                <div>
+                    {{ $students->links() }}
+                </div>
+            </div>
+        </div>
+        @endif
+    </div>
+</div>
