@@ -33,9 +33,9 @@
             <div class="flex flex-col gap-1.5 w-full sm:w-auto flex-1">
                 <label class="text-xs font-bold text-[#617589] dark:text-gray-400 uppercase tracking-wider">Template</label>
                 <div class="relative">
-                    <select wire:model="selectedTemplateId" class="w-full sm:w-[220px] appearance-none bg-white dark:bg-[#1a2632] border border-[#e5e7eb] dark:border-gray-700 text-[#111418] dark:text-white text-sm font-bold rounded-lg h-11 pl-4 pr-10 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary">
+                    <select wire:model.live="selectedTemplateId" class="w-full sm:w-[220px] appearance-none bg-white dark:bg-[#1a2632] border border-[#e5e7eb] dark:border-gray-700 text-[#111418] dark:text-white text-sm font-bold rounded-lg h-11 pl-4 pr-10 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary">
                         <option value="">-- Pilih Template --</option>
-                        @foreach($templates as $template)
+                        @foreach($allTemplates as $template)
                         <option value="{{ $template->id }}">{{ $template->name }}</option>
                         @endforeach
                     </select>
@@ -64,6 +64,16 @@
             </div>
         </label>
         <div class="flex gap-2 flex-wrap items-center w-full md:w-auto overflow-x-auto pb-1 md:pb-0 justify-start md:justify-end">
+            <!-- Template Filter -->
+            <div class="relative">
+                <select wire:model.live="filterTemplate" class="appearance-none h-9 rounded-lg bg-primary/10 text-primary pl-4 pr-8 text-sm font-medium border border-primary/30">
+                    <option value="">All Templates</option>
+                    @foreach($allTemplates as $template)
+                    <option value="{{ $template->id }}">{{ $template->name }}</option>
+                    @endforeach
+                </select>
+                <span class="material-symbols-outlined text-[18px] absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-primary">expand_more</span>
+            </div>
             <!-- Angkatan Filter -->
             <div class="relative">
                 <select wire:model.live="filterAngkatan" class="appearance-none h-9 rounded-lg bg-[#f0f2f4] dark:bg-gray-800 text-[#111418] dark:text-white pl-4 pr-8 text-sm font-medium border-none">
@@ -90,7 +100,8 @@
                     <option value="">All Status</option>
                     <option value="ready">Ready</option>
                     <option value="generated">Generated</option>
-                    <option value="missing_photo">Missing Photo</option>
+                    <option value="no_photo">No Photo</option>
+                    <option value="error">Error</option>
                 </select>
                 <span class="material-symbols-outlined text-[18px] absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">expand_more</span>
             </div>

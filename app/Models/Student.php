@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Support\Facades\Schema;
 
 class Student extends Model
@@ -23,39 +24,61 @@ class Student extends Model
         'jenis_kelamin',
         'alamat',
         'photo',
-        'ktm_generated_at',
-        'ktm_status',
-        'ktm_error_message',
-        'ktm_file_path',
     ];
 
     protected $casts = [
-        'ktm_generated_at' => 'datetime',
         'tanggal_lahir' => 'date',
     ];
 
     /**
-     * Scope for students pending KTM generation.
+     * Get all KTM statuses for this student.
      */
-    public function scopePending($query)
+    public function ktmStatuses(): HasMany
     {
-        return $query->where('ktm_status', 'pending');
+        return $this->hasMany(StudentKtmStatus::class);
     }
 
     /**
-     * Scope for students with generated KTM.
+     * Get KTM status for a specific template.
      */
-    public function scopeGenerated($query)
+    public function getKtmStatusForTemplate(int $templateId): ?StudentKtmStatus
     {
-        return $query->where('ktm_status', 'generated');
+        return $this->ktmStatuses()->where('ktm_template_id', $templateId)->first();
     }
 
     /**
-     * Check if student has generated KTM.
+     * Check if student has generated KTM for a specific template.
      */
-    public function hasKtm(): bool
+    public function hasKtmForTemplate(int $templateId): bool
     {
-        return $this->ktm_status === 'generated' && !empty($this->ktm_file_path);
+        $status = $this->getKtmStatusForTemplate($templateId);
+        return $status && $status->isGenerated();
+    }
+
+    /**
+     * Get the status string for a specific template.
+     */
+    public function getStatusForTemplate(?int $templateId): string
+    {
+        if (!$templateId) {
+            return empty($this->photo) ? 'no_photo' : 'ready';
+        }
+
+        $status = $this->getKtmStatusForTemplate($templateId);
+
+        if (!$status) {
+            return empty($this->photo) ? 'no_photo' : 'ready';
+        }
+
+        if ($status->status === 'error') {
+            return 'error';
+        }
+
+        if ($status->status === 'generated') {
+            return 'generated';
+        }
+
+        return empty($this->photo) ? 'no_photo' : 'ready';
     }
 
     /**

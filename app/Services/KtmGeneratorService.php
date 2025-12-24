@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\KtmTemplate;
 use App\Models\Student;
+use App\Models\StudentKtmStatus;
 use App\Models\AcademicYear;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Laravel\Facades\Image;
@@ -263,12 +264,19 @@ class KtmGeneratorService
             try {
                 $result = $this->generateForStudent($student);
                 if ($result['success']) {
-                    $student->update([
-                        'ktm_status' => 'generated',
-                        'ktm_generated_at' => now(),
-                        'ktm_file_path' => $result['path'],
-                        'ktm_error_message' => null,
-                    ]);
+                    // Save status to pivot table
+                    StudentKtmStatus::updateOrCreate(
+                        [
+                            'student_id' => $student->id,
+                            'ktm_template_id' => $this->template->id,
+                        ],
+                        [
+                            'status' => 'generated',
+                            'file_path' => $result['path'],
+                            'error_message' => null,
+                            'generated_at' => now(),
+                        ]
+                    );
                     $results['success']++;
                 }
             } catch (\Exception $e) {
@@ -279,10 +287,17 @@ class KtmGeneratorService
                     'error' => $e->getMessage(),
                 ];
 
-                $student->update([
-                    'ktm_status' => 'error',
-                    'ktm_error_message' => $e->getMessage(),
-                ]);
+                // Save error status to pivot table
+                StudentKtmStatus::updateOrCreate(
+                    [
+                        'student_id' => $student->id,
+                        'ktm_template_id' => $this->template->id,
+                    ],
+                    [
+                        'status' => 'error',
+                        'error_message' => $e->getMessage(),
+                    ]
+                );
             }
         }
 

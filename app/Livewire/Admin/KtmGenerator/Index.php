@@ -5,6 +5,7 @@ namespace App\Livewire\Admin\KtmGenerator;
 use App\Models\AcademicYear;
 use App\Models\KtmTemplate;
 use App\Models\Student;
+use App\Models\StudentKtmStatus;
 use App\Services\KtmGeneratorService;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -17,6 +18,7 @@ class Index extends Component
     public $filterAngkatan = '';
     public $filterProdi = '';
     public $filterStatus = '';
+    public $filterTemplate = ''; // New filter by template status
     public $selectedStudents = [];
     public $selectAll = false;
 
@@ -28,6 +30,7 @@ class Index extends Component
         'filterAngkatan' => ['except' => ''],
         'filterProdi' => ['except' => ''],
         'filterStatus' => ['except' => ''],
+        'filterTemplate' => ['except' => ''],
     ];
 
     public function mount()
@@ -36,6 +39,7 @@ class Index extends Component
         $activeTemplate = KtmTemplate::where('is_active', true)->first();
         if ($activeTemplate) {
             $this->selectedTemplateId = $activeTemplate->id;
+            $this->filterTemplate = $activeTemplate->id; // Also set as filter
         }
     }
 
@@ -59,6 +63,27 @@ class Index extends Component
         $this->resetPage();
     }
 
+    public function updatingFilterTemplate()
+    {
+        $this->resetPage();
+    }
+
+    public function updatedFilterTemplate($value)
+    {
+        // Sync selected template with filter template
+        if ($value) {
+            $this->selectedTemplateId = $value;
+        }
+    }
+
+    public function updatedSelectedTemplateId($value)
+    {
+        // Sync filter template with selected template
+        if ($value) {
+            $this->filterTemplate = $value;
+        }
+    }
+
     public function updatedSelectAll($value)
     {
         if ($value) {
@@ -70,6 +95,8 @@ class Index extends Component
 
     public function getStudentsQuery()
     {
+        $templateId = $this->filterTemplate ?: $this->selectedTemplateId;
+
         return Student::query()
             ->when($this->search, function ($query) {
                 $query->where(function ($q) {
@@ -81,15 +108,31 @@ class Index extends Component
             ->when($this->filterProdi, function ($query) {
                 $query->where('prodi', $this->filterProdi);
             })
-            ->when($this->filterStatus, function ($query) {
+            ->when($this->filterStatus && $templateId, function ($query) use ($templateId) {
                 if ($this->filterStatus === 'ready') {
-                    $query->whereNotNull('photo')->whereIn('ktm_status', ['pending', null]);
+                    // Students with photo and no generated status for this template
+                    $query->whereNotNull('photo')
+                        ->where('photo', '!=', '')
+                        ->whereDoesntHave('ktmStatuses', function ($q) use ($templateId) {
+                            $q->where('ktm_template_id', $templateId)
+                                ->where('status', 'generated');
+                        });
                 } elseif ($this->filterStatus === 'generated') {
-                    $query->where('ktm_status', 'generated');
+                    // Students with generated status for this template
+                    $query->whereHas('ktmStatuses', function ($q) use ($templateId) {
+                        $q->where('ktm_template_id', $templateId)
+                            ->where('status', 'generated');
+                    });
                 } elseif ($this->filterStatus === 'no_photo') {
-                    $query->whereNull('photo');
+                    $query->where(function ($q) {
+                        $q->whereNull('photo')->orWhere('photo', '');
+                    });
                 } elseif ($this->filterStatus === 'error') {
-                    $query->where('ktm_status', 'error');
+                    // Students with error status for this template
+                    $query->whereHas('ktmStatuses', function ($q) use ($templateId) {
+                        $q->where('ktm_template_id', $templateId)
+                            ->where('status', 'error');
+                    });
                 }
             })
             ->when($this->filterAngkatan, function ($query) {
@@ -107,6 +150,11 @@ class Index extends Component
     public function getTemplatesProperty()
     {
         return KtmTemplate::where('is_active', true)->orderBy('name')->get();
+    }
+
+    public function getAllTemplatesProperty()
+    {
+        return KtmTemplate::orderBy('name')->get();
     }
 
     public function getProdiListProperty()
@@ -132,16 +180,17 @@ class Index extends Component
 
     public function getStudentStatus($student)
     {
-        if ($student->ktm_status === 'error') {
-            return 'error';
+        $templateId = $this->filterTemplate ?: $this->selectedTemplateId;
+        return $student->getStatusForTemplate($templateId ? (int) $templateId : null);
+    }
+
+    public function getStudentKtmStatus($student)
+    {
+        $templateId = $this->filterTemplate ?: $this->selectedTemplateId;
+        if (!$templateId) {
+            return null;
         }
-        if ($student->ktm_status === 'generated') {
-            return 'generated';
-        }
-        if (empty($student->photo)) {
-            return 'no_photo';
-        }
-        return 'ready';
+        return $student->getKtmStatusForTemplate((int) $templateId);
     }
 
     /**
@@ -189,20 +238,48 @@ class Index extends Component
             }
 
             $service = $this->getGeneratorService();
+            $template = $this->getSelectedTemplate();
+
+            if (!$template) {
+                session()->flash('error', 'Silakan pilih template terlebih dahulu.');
+                return;
+            }
+
             $result = $service->generateForStudent($student);
 
             if ($result['success']) {
-                $student->update([
-                    'ktm_status' => 'generated',
-                    'ktm_generated_at' => now(),
-                    'ktm_file_path' => $result['path'],
-                    'ktm_error_message' => null,
-                ]);
+                // Save status to pivot table
+                StudentKtmStatus::updateOrCreate(
+                    [
+                        'student_id' => $student->id,
+                        'ktm_template_id' => $template->id,
+                    ],
+                    [
+                        'status' => 'generated',
+                        'file_path' => $result['path'],
+                        'error_message' => null,
+                        'generated_at' => now(),
+                    ]
+                );
 
                 $photoInfo = empty($student->photo) ? ' (menggunakan foto default)' : '';
                 session()->flash('success', 'KTM untuk ' . $student->name . ' berhasil di-generate' . $photoInfo . '.');
             }
         } catch (\Exception $e) {
+            // Save error status to pivot table
+            $template = $this->getSelectedTemplate();
+            if ($template && isset($student)) {
+                StudentKtmStatus::updateOrCreate(
+                    [
+                        'student_id' => $student->id,
+                        'ktm_template_id' => $template->id,
+                    ],
+                    [
+                        'status' => 'error',
+                        'error_message' => $e->getMessage(),
+                    ]
+                );
+            }
             session()->flash('error', 'Gagal generate KTM: ' . $e->getMessage());
         }
     }
@@ -280,6 +357,7 @@ class Index extends Component
         return view('livewire.admin.ktm-generator.index', [
             'students' => $this->students,
             'templates' => $this->templates,
+            'allTemplates' => $this->allTemplates,
             'prodiList' => $this->prodiList,
             'angkatanList' => $this->angkatanList,
         ]);
