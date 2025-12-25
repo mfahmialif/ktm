@@ -220,34 +220,70 @@ class KtmGeneratorService
     {
         $isBold = $fontWeight === 'bold';
 
-        // Map common font names to system fonts (regular and bold)
+        /*
+     * Font mapping (SEMUA MENGARAH KE FONT INTERNAL PROJECT)
+     * Jangan tergantung OS
+     */
         $fontMap = [
-            'Arial' => ['regular' => 'arial.ttf', 'bold' => 'arialbd.ttf'],
-            'Lexend' => ['regular' => 'arial.ttf', 'bold' => 'arialbd.ttf'], // Fallback to Arial
-            'Roboto' => ['regular' => 'arial.ttf', 'bold' => 'arialbd.ttf'],
-            'Open Sans' => ['regular' => 'arial.ttf', 'bold' => 'arialbd.ttf'],
-            'Times New Roman' => ['regular' => 'times.ttf', 'bold' => 'timesbd.ttf'],
+            'Arial' => [
+                'regular' => 'arial.ttf',
+                'bold'    => 'arial-bold.ttf',
+            ],
+            'Lexend' => [
+                'regular' => 'lexend-regular.ttf',
+                'bold'    => 'lexend-bold.ttf',
+            ],
+            'Roboto' => [
+                'regular' => 'roboto-regular.ttf',
+                'bold'    => 'roboto-bold.ttf',
+            ],
+            'Open Sans' => [
+                'regular' => 'opensans-regular.ttf',
+                'bold'    => 'opensans-bold.ttf',
+            ],
+            'Times New Roman' => [
+                'regular' => 'times.ttf',
+                'bold'    => 'timesbd.ttf',
+            ],
         ];
 
-        $fonts = $fontMap[$fontFamily] ?? ['regular' => 'arial.ttf', 'bold' => 'arialbd.ttf'];
+        // Default fallback font (AMAN DI SEMUA SERVER)
+        $defaultFont = [
+            'regular' => 'arial.ttf',
+            'bold'    => 'arial-bold.ttf',
+        ];
+
+        $fonts = $fontMap[$fontFamily] ?? $defaultFont;
         $fontFile = $isBold ? $fonts['bold'] : $fonts['regular'];
 
-        // Check common font locations
+        // PRIORITAS PATH (INTERNAL PROJECT DULU)
         $fontPaths = [
-            'C:/Windows/Fonts/' . $fontFile,
-            '/usr/share/fonts/truetype/' . $fontFile,
             storage_path('fonts/' . $fontFile),
+            resource_path('fonts/' . $fontFile), // opsional jika Anda simpan di resources
+            base_path('fonts/' . $fontFile),     // opsional
         ];
 
         foreach ($fontPaths as $path) {
-            if (file_exists($path)) {
+            if (is_readable($path)) {
                 return $path;
             }
         }
 
-        // Return Windows default as fallback
-        return 'C:/Windows/Fonts/arial.ttf';
+        /*
+     * FINAL FALLBACK (PASTI ADA)
+     * Pastikan file ini BENAR-BENAR ADA di storage/fonts
+     */
+        $safeFallback = storage_path('fonts/arial.ttf');
+
+        if (! is_readable($safeFallback)) {
+            throw new \RuntimeException(
+                "Font file not found. Please ensure fonts exist in storage/fonts"
+            );
+        }
+
+        return $safeFallback;
     }
+
 
     /**
      * Batch generate KTMs for multiple students
