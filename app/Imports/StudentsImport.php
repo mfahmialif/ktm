@@ -34,7 +34,7 @@ class StudentsImport implements ToModel, WithHeadingRow, WithValidation
     public function rules(): array
     {
         return [
-            'nim' => 'required|unique:students,nim',
+            'nim' => 'required',
             'name' => 'required',
             'prodi' => 'required',
             'angkatan' => 'required',

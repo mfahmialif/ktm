@@ -76,3 +76,64 @@
         </div>
     </div>
 </x-admin-layout>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const fileInput = document.getElementById('file');
+        const dropZone = fileInput.parentElement;
+        const dropZoneText = dropZone.querySelector('p.mb-2');
+        const originalText = dropZoneText.innerHTML;
+
+        // Handle file selection
+        fileInput.addEventListener('change', function(e) {
+            updateFileName(this.files[0]);
+        });
+
+        // Drag and drop events
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, highlight, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, unhighlight, false);
+        });
+
+        function highlight(e) {
+            dropZone.classList.add('border-primary', 'bg-blue-50', 'dark:bg-blue-900/10');
+            dropZone.classList.remove('border-gray-300', 'dark:border-gray-600', 'bg-gray-50', 'dark:bg-gray-700');
+        }
+
+        function unhighlight(e) {
+            dropZone.classList.remove('border-primary', 'bg-blue-50', 'dark:bg-blue-900/10');
+            dropZone.classList.add('border-gray-300', 'dark:border-gray-600', 'bg-gray-50', 'dark:bg-gray-700');
+        }
+
+        dropZone.addEventListener('drop', handleDrop, false);
+
+        function handleDrop(e) {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+
+            fileInput.files = files;
+            updateFileName(files[0]);
+        }
+
+        function updateFileName(file) {
+            if (file) {
+                dropZoneText.innerHTML = `<span class="font-bold text-primary">${file.name}</span>`;
+            } else {
+                dropZoneText.innerHTML = originalText;
+            }
+        }
+    });
+
+</script>
