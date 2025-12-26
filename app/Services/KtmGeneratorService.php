@@ -295,18 +295,63 @@ class KtmGeneratorService
             // Generate QR code using chillerlan/php-qrcode
             $options = new QROptions([
                 'outputType' => QRCode::OUTPUT_IMAGE_PNG,
-                'scale' => max(1, intval($size / 25)), // Scale based on desired size
+                'scale' => max(4, intval($size / 25)), // Scale for quality
                 'imageBase64' => false,
             ]);
 
             $qrcode = new QRCode($options);
             $qrCodeData = $qrcode->render($content);
 
-            // Create image from QR code PNG data
-            $qrCodeImage = Image::read($qrCodeData);
+            // Load into GD
+            $srcImage = imagecreatefromstring($qrCodeData);
+            if ($srcImage === false) {
+                throw new \Exception('Failed to create GD image from QR code data');
+            }
 
-            // Resize to exact configured size
-            $qrCodeImage->resize($size, $size);
+            $width = imagesx($srcImage);
+            $height = imagesy($srcImage);
+
+            // Create a new true color image with alpha support
+            $dstImage = imagecreatetruecolor($width, $height);
+            imagealphablending($dstImage, false);
+            imagesavealpha($dstImage, true);
+
+            // Create transparent color
+            $transparent = imagecolorallocatealpha($dstImage, 0, 0, 0, 127);
+            imagefill($dstImage, 0, 0, $transparent);
+
+            // Copy pixels, making white transparent
+            for ($px = 0; $px < $width; $px++) {
+                for ($py = 0; $py < $height; $py++) {
+                    $color = imagecolorat($srcImage, $px, $py);
+                    $r = ($color >> 16) & 0xFF;
+                    $g = ($color >> 8) & 0xFF;
+                    $b = $color & 0xFF;
+
+                    // If pixel is white or near-white, make it transparent
+                    if ($r > 250 && $g > 250 && $b > 250) {
+                        imagesetpixel($dstImage, $px, $py, $transparent);
+                    } else {
+                        // Keep the original color (black QR code pixels)
+                        $newColor = imagecolorallocatealpha($dstImage, $r, $g, $b, 0);
+                        imagesetpixel($dstImage, $px, $py, $newColor);
+                    }
+                }
+            }
+
+            imagedestroy($srcImage);
+
+            // Convert back to PNG string
+            ob_start();
+            imagepng($dstImage);
+            $transparentPng = ob_get_clean();
+            imagedestroy($dstImage);
+
+            // Create Intervention Image from transparent PNG
+            $qrCodeImage = Image::read($transparentPng);
+
+            // Scale to exact configured size
+            $qrCodeImage->scale($size, $size);
 
             // Place QR code on template
             $image->place($qrCodeImage, 'top-left', $x, $y);
