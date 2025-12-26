@@ -125,6 +125,20 @@ class Student extends Model
             ];
         }
 
+        // Add barcode as a virtual field (uses NIM as content)
+        $fields['barcode'] = [
+            'column' => 'barcode',
+            'label' => 'Barcode (NIM)',
+            'type' => 'barcode',
+        ];
+
+        // Add QR code as a virtual field (uses NIM as content)
+        $fields['qrcode'] = [
+            'column' => 'qrcode',
+            'label' => 'QR Code (NIM)',
+            'type' => 'qrcode',
+        ];
+
         return $fields;
     }
 

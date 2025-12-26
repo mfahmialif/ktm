@@ -109,13 +109,29 @@ $availableJson = json_encode($availableFields ?: []);
                         let maxY = 80;
                         for (let k in this.fields) { if (this.fields[k].y > maxY) maxY = this.fields[k].y; }
                         
+                        // Set defaults based on field type
+                        let defaultWidth = 120, defaultHeight = 160, defaultX = 180;
+                        if (info.type === 'image') {
+                            defaultX = 30;
+                            defaultWidth = 120;
+                            defaultHeight = 160;
+                        } else if (info.type === 'barcode') {
+                            defaultX = 30;
+                            defaultWidth = 200;
+                            defaultHeight = 50;
+                        } else if (info.type === 'qrcode') {
+                            defaultX = 30;
+                            defaultWidth = 100;
+                            defaultHeight = 100;
+                        }
+                        
                         this.fields[this.fieldToAdd] = {
                             label: info.label,
                             type: info.type,
-                            x: info.type === 'image' ? 30 : 180,
+                            x: defaultX,
                             y: maxY + 35,
-                            width: 120,
-                            height: 160,
+                            width: defaultWidth,
+                            height: defaultHeight,
                             font_family: 'Lexend',
                             font_size: 16,
                             font_color: '#111418',
@@ -177,7 +193,18 @@ $availableJson = json_encode($availableFields ?: []);
                                                 <span class="material-symbols-outlined text-gray-500 text-3xl">person</span>
                                             </div>
                                         </template>
-                                        <template x-if="field.type !== 'image'">
+                                        <template x-if="field.type === 'barcode'">
+                                            <div class="flex items-center justify-center bg-white border border-gray-300 p-1" :style="'width:' + field.width + 'px; height:' + field.height + 'px;'">
+                                                <span class="material-symbols-outlined text-gray-700" style="font-size: 24px;">barcode</span>
+                                                <span class="text-xs text-gray-500 ml-1">NIM</span>
+                                            </div>
+                                        </template>
+                                        <template x-if="field.type === 'qrcode'">
+                                            <div class="flex items-center justify-center bg-white border border-gray-300 p-1" :style="'width:' + field.width + 'px; height:' + field.height + 'px;'">
+                                                <span class="material-symbols-outlined text-gray-700" style="font-size: 32px;">qr_code</span>
+                                            </div>
+                                        </template>
+                                        <template x-if="field.type !== 'image' && field.type !== 'barcode' && field.type !== 'qrcode'">
                                             <p class="whitespace-nowrap leading-none" :style="'font-family:' + field.font_family + ',sans-serif; font-size:' + field.font_size + 'px; color:' + field.font_color + '; font-weight:' + field.font_weight" x-text="getSample(name)"></p>
                                         </template>
                                     </div>
@@ -215,7 +242,7 @@ $availableJson = json_encode($availableFields ?: []);
                             <template x-for="(field, name) in fields" :key="name">
                                 <div class="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer" :class="selectedField === name ? 'bg-primary/10 ring-1 ring-primary/30' : ''" @click="selectField(name)">
                                     <div class="flex items-center gap-2">
-                                        <span class="material-symbols-outlined text-[18px] text-gray-500" x-text="field.type === 'image' ? 'image' : 'text_fields'"></span>
+                                        <span class="material-symbols-outlined text-[18px] text-gray-500" x-text="field.type === 'image' ? 'image' : (field.type === 'barcode' ? 'barcode' : (field.type === 'qrcode' ? 'qr_code' : 'text_fields'))"></span>
                                         <span class="text-sm font-medium" x-text="field.label"></span>
                                     </div>
                                     <button type="button" @click.stop="removeField(name)" class="p-1 text-red-500 hover:bg-red-50 rounded">
@@ -244,8 +271,8 @@ $availableJson = json_encode($availableFields ?: []);
                                 </div>
                             </div>
 
-                            <!-- Image Dimensions -->
-                            <template x-if="fields[selectedField]?.type === 'image'">
+                            <!-- Image/Barcode/QRCode Dimensions -->
+                            <template x-if="fields[selectedField]?.type === 'image' || fields[selectedField]?.type === 'barcode' || fields[selectedField]?.type === 'qrcode'">
                                 <div class="grid grid-cols-2 gap-3">
                                     <div>
                                         <label class="text-xs text-gray-500 block mb-1">Width</label>
@@ -259,7 +286,7 @@ $availableJson = json_encode($availableFields ?: []);
                             </template>
 
                             <!-- Text Typography -->
-                            <template x-if="fields[selectedField]?.type !== 'image'">
+                            <template x-if="fields[selectedField]?.type !== 'image' && fields[selectedField]?.type !== 'barcode' && fields[selectedField]?.type !== 'qrcode'">
                                 <div class="flex flex-col gap-3">
                                     <div>
                                         <label class="text-xs text-gray-500 block mb-1">Font</label>

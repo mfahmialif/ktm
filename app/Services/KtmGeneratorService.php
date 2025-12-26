@@ -9,6 +9,9 @@ use App\Models\AcademicYear;
 use Illuminate\Support\Facades\Storage;
 use Intervention\Image\Laravel\Facades\Image;
 use Intervention\Image\Typography\FontFactory;
+use Picqer\Barcode\BarcodeGeneratorPNG;
+use chillerlan\QRCode\QRCode;
+use chillerlan\QRCode\QROptions;
 
 class KtmGeneratorService
 {
@@ -57,16 +60,30 @@ class KtmGeneratorService
         $image = Image::read($templatePath);
 
         // Apply each enabled field (coordinates are now direct - no scaling needed)
+        \Illuminate\Support\Facades\Log::info("KTM Generation settings", ['settings' => $this->settings]);
+
         foreach ($this->settings as $fieldName => $fieldSettings) {
             if (!isset($fieldSettings['enabled']) || !$fieldSettings['enabled']) {
                 continue;
             }
 
-            // Determine field type - force 'photo' to be image type
+            // Determine field type - force 'photo' to be image type, 'barcode' to be barcode type
             $type = $fieldSettings['type'] ?? 'text';
             if ($fieldName === 'photo') {
                 $type = 'image';
             }
+            if ($fieldName === 'barcode') {
+                $type = 'barcode';
+            }
+            if ($fieldName === 'qrcode') {
+                $type = 'qrcode';
+            }
+
+            \Illuminate\Support\Facades\Log::info("Processing field", [
+                'fieldName' => $fieldName,
+                'type' => $type,
+                'originalType' => $fieldSettings['type'] ?? 'not set',
+            ]);
 
             // Use coordinates directly (no scaling - preview uses actual template size)
             $x = (int) ($fieldSettings['x'] ?? 0);
@@ -78,6 +95,12 @@ class KtmGeneratorService
                 if ($photoPath) {
                     $this->overlayImage($image, $photoPath, $x, $y, $fieldSettings);
                 }
+            } elseif ($type === 'barcode') {
+                // Generate barcode with student's NIM
+                $this->overlayBarcode($image, $student->nim, $x, $y, $fieldSettings);
+            } elseif ($type === 'qrcode') {
+                // Generate QR code with student's NIM
+                $this->overlayQrCode($image, $student->nim, $x, $y, $fieldSettings);
             } else {
                 // Get text value
                 $value = $this->getStudentFieldValue($student, $fieldName);
@@ -210,6 +233,88 @@ class KtmGeneratorService
         } catch (\Exception $e) {
             // Log error but continue
             \Illuminate\Support\Facades\Log::warning("Failed to overlay image at {$imagePath}: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Overlay barcode on template
+     */
+    protected function overlayBarcode($image, string $content, int $x, int $y, array $settings): void
+    {
+        \Illuminate\Support\Facades\Log::info("overlayBarcode called", [
+            'content' => $content,
+            'x' => $x,
+            'y' => $y,
+            'width' => $settings['width'] ?? 200,
+            'height' => $settings['height'] ?? 50,
+        ]);
+
+        if (empty($content)) {
+            \Illuminate\Support\Facades\Log::warning("overlayBarcode: empty content, skipping");
+            return;
+        }
+
+        $width = (int) ($settings['width'] ?? 200);
+        $height = (int) ($settings['height'] ?? 50);
+
+        try {
+            // Generate barcode PNG
+            $generator = new BarcodeGeneratorPNG();
+            $barcodeData = $generator->getBarcode($content, $generator::TYPE_CODE_128, 2, $height);
+
+            \Illuminate\Support\Facades\Log::info("Barcode generated", ['dataLength' => strlen($barcodeData)]);
+
+            // Create image from barcode data
+            $barcodeImage = Image::read($barcodeData);
+
+            // Resize to configured width while maintaining height
+            $barcodeImage->resize($width, $height);
+
+            // Place barcode on template
+            $image->place($barcodeImage, 'top-left', $x, $y);
+
+            \Illuminate\Support\Facades\Log::info("Barcode placed successfully at ({$x}, {$y})");
+        } catch (\Exception $e) {
+            // Log error but continue
+            \Illuminate\Support\Facades\Log::warning("Failed to generate barcode for content '{$content}': " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Overlay QR code on template
+     */
+    protected function overlayQrCode($image, string $content, int $x, int $y, array $settings): void
+    {
+        if (empty($content)) {
+            return;
+        }
+
+        $size = (int) ($settings['width'] ?? 100);
+
+        try {
+            // Generate QR code using chillerlan/php-qrcode
+            $options = new QROptions([
+                'outputType' => QRCode::OUTPUT_IMAGE_PNG,
+                'scale' => max(1, intval($size / 25)), // Scale based on desired size
+                'imageBase64' => false,
+            ]);
+
+            $qrcode = new QRCode($options);
+            $qrCodeData = $qrcode->render($content);
+
+            // Create image from QR code PNG data
+            $qrCodeImage = Image::read($qrCodeData);
+
+            // Resize to exact configured size
+            $qrCodeImage->resize($size, $size);
+
+            // Place QR code on template
+            $image->place($qrCodeImage, 'top-left', $x, $y);
+
+            \Illuminate\Support\Facades\Log::info("QR code placed successfully at ({$x}, {$y})");
+        } catch (\Exception $e) {
+            // Log error but continue
+            \Illuminate\Support\Facades\Log::warning("Failed to generate QR code for content '{$content}': " . $e->getMessage());
         }
     }
 

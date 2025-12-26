@@ -232,6 +232,8 @@ class KtmTemplateController extends Controller
         $validated = $request->validate([
             'settings' => 'required|array',
             'settings.*.enabled' => 'boolean',
+            'settings.*.label' => 'nullable|string',
+            'settings.*.type' => 'nullable|string',
             'settings.*.x' => 'nullable|numeric',
             'settings.*.y' => 'nullable|numeric',
             'settings.*.width' => 'nullable|numeric',
