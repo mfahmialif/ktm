@@ -4,6 +4,7 @@ use App\Http\Controllers\AcademicYearController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\KtmTemplateController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\TestingController;
 use App\Models\KtmTemplate;
 use Illuminate\Support\Facades\Route;
 
@@ -62,6 +63,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/ktm-generator', function () {
         return view('admin.ktm-generator.index');
     })->name('ktm-generator.index');
+
+    Route::get('testing', [TestingController::class, 'index'])->name("testing.index");
 });
 
 require __DIR__ . '/auth.php';
