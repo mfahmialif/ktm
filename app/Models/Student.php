@@ -13,6 +13,7 @@ class Student extends Model
 
     protected $fillable = [
         'nim',
+        'nik',
         'name',
         'email',
         'class',

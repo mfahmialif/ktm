@@ -17,6 +17,7 @@ class StudentTemplateExport implements FromCollection, WithHeadings, WithMapping
         return collect([
             (object)[
                 'nim' => '20240001',
+                'nik' => '3517012345678901',
                 'name' => 'John Doe',
                 'email' => 'john.doe@example.com',
                 'class' => 'IF-A',
@@ -35,6 +36,7 @@ class StudentTemplateExport implements FromCollection, WithHeadings, WithMapping
     {
         return [
             'nim',
+            'nik',
             'name',
             'email',
             'class',
@@ -52,6 +54,7 @@ class StudentTemplateExport implements FromCollection, WithHeadings, WithMapping
     {
         return [
             $row->nim,
+            $row->nik,
             $row->name,
             $row->email,
             $row->class,

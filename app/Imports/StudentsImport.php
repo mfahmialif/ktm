@@ -18,6 +18,7 @@ class StudentsImport implements ToModel, WithHeadingRow, WithValidation
     {
         return new Student([
             'nim'           => $row['nim'],
+            'nik'           => $row['nik'] ?? null,
             'name'          => $row['name'],
             'email'         => $row['email'] ?? null,
             'class'         => $row['class'] ?? null,

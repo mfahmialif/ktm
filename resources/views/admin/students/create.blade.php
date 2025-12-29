@@ -57,6 +57,17 @@
                         @enderror
                     </div>
 
+                    <!-- NIK -->
+                    <div>
+                        <label for="nik" class="block text-sm font-medium text-[#111418] dark:text-gray-200 mb-1">
+                            NIK
+                        </label>
+                        <input type="text" name="nik" id="nik" value="{{ old('nik') }}" class="w-full px-4 py-2.5 text-sm border rounded-lg focus:ring-2 focus:ring-primary focus:border-primary dark:bg-[#23303d] dark:border-[#2a3b4d] dark:text-white @error('nik') border-red-500 @enderror" placeholder="16 digit NIK" maxlength="16" />
+                        @error('nik')
+                        <p class="mt-1 text-sm text-red-500">{{ $message }}</p>
+                        @enderror
+                    </div>
+
                     <!-- Name -->
                     <div>
                         <label for="name" class="block text-sm font-medium text-[#111418] dark:text-gray-200 mb-1">

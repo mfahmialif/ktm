@@ -132,6 +132,57 @@
     </div>
     @endif
 
+    <!-- Progress Bar for Photo Download -->
+    @if ($activePhotoDownload)
+    <div class="mb-4 p-4 rounded-xl bg-gradient-to-r from-purple-50 to-purple-100/50 dark:from-purple-900/20 dark:to-purple-800/20 border border-purple-500/30">
+        <div class="flex items-center justify-between mb-3">
+            <div class="flex items-center gap-3">
+                @if ($activePhotoDownload->isRunning())
+                <span class="material-symbols-outlined text-purple-600 animate-spin">progress_activity</span>
+                <span class="text-sm font-bold text-purple-700 dark:text-purple-400">Downloading Photos...</span>
+                @else
+                <span class="material-symbols-outlined text-purple-500">check_circle</span>
+                <span class="text-sm font-bold text-purple-600 dark:text-purple-400">Photo Download Complete!</span>
+                @endif
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="text-right">
+                    <span class="text-2xl font-black text-purple-600">{{ $activePhotoDownload->processed_students }}</span>
+                    <span class="text-sm text-gray-500">/ {{ $activePhotoDownload->total_students }}</span>
+                </div>
+                @if (!$activePhotoDownload->isRunning())
+                <button wire:click="dismissPhotoDownload" class="p-1 text-gray-400 hover:text-gray-600 transition-colors">
+                    <span class="material-symbols-outlined text-[18px]">close</span>
+                </button>
+                @endif
+            </div>
+        </div>
+
+        <!-- Progress Bar -->
+        <div class="relative h-4 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+            <div class="absolute inset-0 h-full bg-gradient-to-r from-purple-500 to-purple-400 transition-all duration-500 ease-out rounded-full" style="width: {{ $activePhotoDownload->progress_percentage }}%">
+            </div>
+            <div class="absolute inset-0 flex items-center justify-center">
+                <span class="text-[10px] font-bold text-white drop-shadow-sm">{{ $activePhotoDownload->progress_percentage }}%</span>
+            </div>
+        </div>
+
+        <!-- Stats -->
+        <div class="flex items-center gap-4 mt-3 text-xs">
+            <span class="inline-flex items-center gap-1 text-purple-600 dark:text-purple-400">
+                <span class="material-symbols-outlined text-[14px]">check</span>
+                Sukses: {{ $activePhotoDownload->success_count }}
+            </span>
+            @if ($activePhotoDownload->failed_count > 0)
+            <span class="inline-flex items-center gap-1 text-red-600 dark:text-red-400">
+                <span class="material-symbols-outlined text-[14px]">error</span>
+                Gagal: {{ $activePhotoDownload->failed_count }}
+            </span>
+            @endif
+        </div>
+    </div>
+    @endif
+
     <!-- Breadcrumb -->
     <div class="flex flex-wrap gap-2 mb-4">
         <a class="text-[#617589] dark:text-gray-400 text-sm font-medium hover:text-primary" href="{{ route('dashboard') }}">Dashboard</a>
@@ -172,6 +223,12 @@
                     <span wire:loading wire:target="downloadAll" class="material-symbols-outlined text-[20px] animate-spin">progress_activity</span>
                     <span wire:loading.remove wire:target="downloadAll">Download All</span>
                     <span wire:loading wire:target="downloadAll">Processing...</span>
+                </button>
+                <button type="button" wire:click="downloadPhotosAll" wire:confirm="Download foto untuk semua mahasiswa?" wire:loading.attr="disabled" wire:target="downloadPhotosAll" class="flex shrink-0 min-w-[84px] cursor-pointer items-center justify-center overflow-hidden rounded-lg h-11 px-6 bg-purple-600 text-white text-sm font-bold hover:bg-purple-700 transition-all shadow-md gap-2 flex-1 sm:flex-initial disabled:opacity-50 disabled:cursor-not-allowed">
+                    <span wire:loading.remove wire:target="downloadPhotosAll" class="material-symbols-outlined text-[20px]">photo_library</span>
+                    <span wire:loading wire:target="downloadPhotosAll" class="material-symbols-outlined text-[20px] animate-spin">progress_activity</span>
+                    <span wire:loading.remove wire:target="downloadPhotosAll">Download Foto</span>
+                    <span wire:loading wire:target="downloadPhotosAll">Processing...</span>
                 </button>
             </div>
         </div>
@@ -248,6 +305,12 @@
                 <span wire:loading wire:target="downloadBulk" class="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
                 <span wire:loading.remove wire:target="downloadBulk">Download Selected</span>
                 <span wire:loading wire:target="downloadBulk">Processing...</span>
+            </button>
+            <button type="button" wire:click="downloadPhotosBulk" wire:confirm="Download foto untuk {{ count($selectedStudents) }} mahasiswa yang dipilih?" wire:loading.attr="disabled" wire:target="downloadPhotosBulk" class="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white text-sm font-bold rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                <span wire:loading.remove wire:target="downloadPhotosBulk" class="material-symbols-outlined text-[18px]">photo_library</span>
+                <span wire:loading wire:target="downloadPhotosBulk" class="material-symbols-outlined text-[18px] animate-spin">progress_activity</span>
+                <span wire:loading.remove wire:target="downloadPhotosBulk">Download Foto</span>
+                <span wire:loading wire:target="downloadPhotosBulk">Processing...</span>
             </button>
         </div>
     </div>

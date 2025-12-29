@@ -31,6 +31,7 @@ class StudentController extends Controller
     {
         $validated = $request->validate([
             'nim' => 'required|string|unique:students,nim',
+            'nik' => 'nullable|string|max:16',
             'name' => 'required|string|max:255',
             'email' => 'nullable|email|max:255',
             'prodi' => 'required|string|max:255',
@@ -68,6 +69,7 @@ class StudentController extends Controller
     {
         $validated = $request->validate([
             'nim' => 'required|string|unique:students,nim,' . $student->id,
+            'nik' => 'nullable|string|max:16',
             'name' => 'required|string|max:255',
             'email' => 'nullable|email|max:255',
             'prodi' => 'required|string|max:255',

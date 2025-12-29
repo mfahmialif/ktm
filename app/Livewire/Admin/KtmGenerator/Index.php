@@ -3,10 +3,12 @@
 namespace App\Livewire\Admin\KtmGenerator;
 
 use App\Jobs\CreateKtmZipJob;
+use App\Jobs\DownloadPhotoBatchJob;
 use App\Jobs\GenerateKtmBatchJob;
 use App\Models\AcademicYear;
 use App\Models\KtmBatchJob;
 use App\Models\KtmDownloadJob;
+use App\Models\PhotoDownloadJob;
 use App\Models\KtmTemplate;
 use App\Models\Student;
 use App\Models\StudentKtmStatus;
@@ -37,6 +39,9 @@ class Index extends Component
 
     // For download job progress tracking
     public $activeDownloadId = null;
+
+    // For photo download job progress tracking
+    public $activePhotoDownloadId = null;
 
     // Download jobs list properties
     public $downloadJobSearch = '';
@@ -626,6 +631,121 @@ class Index extends Component
         }
     }
 
+    /**
+     * Download photos for selected students
+     */
+    public function downloadPhotosBulk()
+    {
+        try {
+            if (empty($this->selectedStudents)) {
+                session()->flash('error', 'Tidak ada mahasiswa yang dipilih.');
+                return;
+            }
+
+            // Get student IDs that have NIK
+            $studentIds = Student::whereIn('id', $this->selectedStudents)
+                ->whereNotNull('nik')
+                ->where('nik', '!=', '')
+                ->pluck('id')
+                ->toArray();
+
+            if (empty($studentIds)) {
+                session()->flash('error', 'Tidak ada mahasiswa dengan NIK yang ditemukan.');
+                return;
+            }
+
+            // Create batch job record for progress tracking
+            $batchId = PhotoDownloadJob::generateBatchId();
+            PhotoDownloadJob::create([
+                'batch_id' => $batchId,
+                'total_students' => count($studentIds),
+                'status' => 'pending',
+            ]);
+
+            $this->activePhotoDownloadId = $batchId;
+
+            // Dispatch jobs in chunks of 50
+            $chunkSize = 50;
+            $chunks = array_chunk($studentIds, $chunkSize);
+
+            foreach ($chunks as $chunk) {
+                DownloadPhotoBatchJob::dispatch($chunk, $batchId);
+            }
+
+            $this->selectedStudents = [];
+            $this->selectAll = false;
+
+            $totalStudents = count($studentIds);
+            session()->flash('success', "Proses download {$totalStudents} foto telah dimulai. Lihat progress di bawah.");
+        } catch (\Exception $e) {
+            session()->flash('error', 'Gagal menjadwalkan download foto: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Download photos for all filtered students
+     */
+    public function downloadPhotosAll()
+    {
+        try {
+            // Get all student IDs based on current filters that have NIK
+            $studentIds = $this->getStudentsQuery()
+                ->whereNotNull('nik')
+                ->where('nik', '!=', '')
+                ->pluck('id')
+                ->toArray();
+
+            if (empty($studentIds)) {
+                session()->flash('error', 'Tidak ada mahasiswa dengan NIK yang ditemukan.');
+                return;
+            }
+
+            // Create batch job record for progress tracking
+            $batchId = PhotoDownloadJob::generateBatchId();
+            PhotoDownloadJob::create([
+                'batch_id' => $batchId,
+                'total_students' => count($studentIds),
+                'status' => 'pending',
+            ]);
+
+            $this->activePhotoDownloadId = $batchId;
+
+            // Dispatch jobs in chunks of 50
+            $chunkSize = 50;
+            $chunks = array_chunk($studentIds, $chunkSize);
+
+            foreach ($chunks as $chunk) {
+                DownloadPhotoBatchJob::dispatch($chunk, $batchId);
+            }
+
+            $totalStudents = count($studentIds);
+            session()->flash('success', "Proses download {$totalStudents} foto telah dimulai. Lihat progress di bawah.");
+        } catch (\Exception $e) {
+            session()->flash('error', 'Gagal menjadwalkan download foto: ' . $e->getMessage());
+        }
+    }
+
+    /**
+     * Get active photo download job
+     */
+    public function getActivePhotoDownloadProperty()
+    {
+        if ($this->activePhotoDownloadId) {
+            return PhotoDownloadJob::where('batch_id', $this->activePhotoDownloadId)->first();
+        }
+
+        // Check for any active photo download
+        return PhotoDownloadJob::getActiveBatch();
+    }
+
+    /**
+     * Dismiss photo download progress
+     */
+    public function dismissPhotoDownload()
+    {
+        $this->activePhotoDownloadId = null;
+    }
+
     public function render()
     {
         return view('livewire.admin.ktm-generator.index', [
@@ -636,7 +756,9 @@ class Index extends Component
             'angkatanList' => $this->angkatanList,
             'activeBatch' => $this->activeBatch,
             'activeDownload' => $this->activeDownload,
+            'activePhotoDownload' => $this->activePhotoDownload,
             'downloadJobs' => $this->downloadJobs,
         ]);
     }
 }
+

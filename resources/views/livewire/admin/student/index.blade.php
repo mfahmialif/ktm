@@ -40,7 +40,7 @@
             <div class="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-[#617589]">
                 <span class="material-symbols-outlined text-[20px]">search</span>
             </div>
-            <input wire:model.live.debounce.300ms="search" type="text" class="block w-full h-10 pl-10 pr-3 text-sm text-[#111418] border border-[#e5e7eb] rounded-lg bg-[#f8fafc] focus:ring-primary focus:border-primary dark:bg-[#23303d] dark:border-[#2a3b4d] dark:placeholder-[#617589] dark:text-white transition-all" placeholder="Search by NIM or Name..." />
+            <input wire:model.live.debounce.300ms="search" type="text" class="block w-full h-10 pl-10 pr-3 text-sm text-[#111418] border border-[#e5e7eb] rounded-lg bg-[#f8fafc] focus:ring-primary focus:border-primary dark:bg-[#23303d] dark:border-[#2a3b4d] dark:placeholder-[#617589] dark:text-white transition-all" placeholder="Search by NIM, NIK or Name..." />
             <div wire:loading wire:target="search" class="absolute inset-y-0 right-3 flex items-center">
                 <div class="animate-spin rounded-full h-4 w-4 border-2 border-primary border-t-transparent"></div>
             </div>
@@ -92,6 +92,7 @@
             <thead class="text-xs text-[#617589] uppercase bg-gray-50 dark:bg-[#23303d] dark:text-slate-400 border-b border-[#e5e7eb] dark:border-[#2a3b4d]">
                 <tr>
                     <th scope="col" class="px-6 py-4 font-bold tracking-wider">NIM</th>
+                    <th scope="col" class="px-6 py-4 font-bold tracking-wider">NIK</th>
                     <th scope="col" class="px-6 py-4 font-bold tracking-wider">Student</th>
                     <th scope="col" class="px-6 py-4 font-bold tracking-wider">Prodi</th>
                     <th scope="col" class="px-6 py-4 font-bold tracking-wider">Angkatan</th>
@@ -104,6 +105,9 @@
                     <th scope="row" class="px-6 py-4 font-medium text-[#111418] whitespace-nowrap dark:text-white font-mono">
                         {{ $student->nim }}
                     </th>
+                    <td class="px-6 py-4 font-mono text-xs text-[#617589] dark:text-gray-400">
+                        {{ $student->nik ?? '-' }}
+                    </td>
                     <td class="px-6 py-4">
                         <div class="flex items-center gap-3">
                             @if($student->photo)
@@ -140,7 +144,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="5" class="px-6 py-12 text-center">
+                    <td colspan="6" class="px-6 py-12 text-center">
                         <div class="flex flex-col items-center gap-3">
                             <div class="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center">
                                 <span class="material-symbols-outlined text-3xl text-gray-400 dark:text-gray-600">person_off</span>
