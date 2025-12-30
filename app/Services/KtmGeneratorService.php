@@ -208,6 +208,7 @@ class KtmGeneratorService
 
     /**
      * Overlay image (photo) on template
+     * Uses top-center crop to focus on the upper part of the image (for portraits/faces)
      */
     protected function overlayImage($image, string $imagePath, int $x, int $y, array $settings): void
     {
@@ -215,19 +216,44 @@ class KtmGeneratorService
             return;
         }
 
-        $width = (int) ($settings['width'] ?? 120);
-        $height = (int) ($settings['height'] ?? 160);
+        $targetWidth = (int) ($settings['width'] ?? 120);
+        $targetHeight = (int) ($settings['height'] ?? 160);
 
         try {
             // Check if it's SVG
             if (str_ends_with(strtolower($imagePath), '.svg')) {
                 // For SVG, we skip as Intervention can't handle it directly
-                // You might need to convert SVG to PNG first
                 return;
             }
 
             $overlay = Image::read($imagePath);
-            $overlay->cover($width, $height);
+            
+            // Get original dimensions
+            $origWidth = $overlay->width();
+            $origHeight = $overlay->height();
+            
+            // Calculate aspect ratios
+            $targetRatio = $targetWidth / $targetHeight;
+            $origRatio = $origWidth / $origHeight;
+            
+            if ($origRatio > $targetRatio) {
+                // Original is wider - scale by height, crop width from center
+                $newHeight = $targetHeight;
+                $newWidth = (int) ($origWidth * ($targetHeight / $origHeight));
+                $overlay->resize($newWidth, $newHeight);
+                
+                // Crop from center horizontally
+                $cropX = (int) (($newWidth - $targetWidth) / 2);
+                $overlay->crop($targetWidth, $targetHeight, $cropX, 0);
+            } else {
+                // Original is taller - scale by width, crop height from TOP (focus on face)
+                $newWidth = $targetWidth;
+                $newHeight = (int) ($origHeight * ($targetWidth / $origWidth));
+                $overlay->resize($newWidth, $newHeight);
+                
+                // Crop from TOP (y = 0) to focus on the face/upper part
+                $overlay->crop($targetWidth, $targetHeight, 0, 0);
+            }
 
             $image->place($overlay, 'top-left', $x, $y);
         } catch (\Exception $e) {
