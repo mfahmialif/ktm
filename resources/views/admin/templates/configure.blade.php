@@ -94,6 +94,23 @@ $availableJson = json_encode($availableFields ?: []);
                     fieldToAdd: '',
                     availableFields: {{ $availableJson }},
                     
+                    init() {
+                        // Ensure bg_transparent and bg_color have default values for existing fields
+                        for (let name in this.fields) {
+                            if (this.fields[name].type === 'barcode' || this.fields[name].type === 'qrcode') {
+                                if (this.fields[name].bg_transparent === undefined) {
+                                    this.fields[name].bg_transparent = true;
+                                } else {
+                                    // Convert string '1'/'0' to boolean
+                                    this.fields[name].bg_transparent = this.fields[name].bg_transparent === '1' || this.fields[name].bg_transparent === true;
+                                }
+                                if (this.fields[name].bg_color === undefined) {
+                                    this.fields[name].bg_color = '#ffffff';
+                                }
+                            }
+                        }
+                    },
+                    
                     selectField(name) { this.selectedField = name; },
                     
                     hasField(name) { return this.fields.hasOwnProperty(name); },
@@ -135,7 +152,9 @@ $availableJson = json_encode($availableFields ?: []);
                             font_family: 'Lexend',
                             font_size: 16,
                             font_color: '#111418',
-                            font_weight: 'normal'
+                            font_weight: 'normal',
+                            bg_transparent: true,
+                            bg_color: '#ffffff'
                         };
                         this.selectedField = this.fieldToAdd;
                         this.fieldToAdd = '';
@@ -194,13 +213,13 @@ $availableJson = json_encode($availableFields ?: []);
                                             </div>
                                         </template>
                                         <template x-if="field.type === 'barcode'">
-                                            <div class="flex items-center justify-center bg-white border border-gray-300 p-1" :style="'width:' + field.width + 'px; height:' + field.height + 'px;'">
+                                            <div class="flex items-center justify-center border border-gray-300 p-1" :style="'width:' + field.width + 'px; height:' + field.height + 'px; background-color:' + (field.bg_transparent ? 'transparent' : field.bg_color) + ';'">
                                                 <span class="material-symbols-outlined text-gray-700" style="font-size: 24px;">barcode</span>
                                                 <span class="text-xs text-gray-500 ml-1">NIM</span>
                                             </div>
                                         </template>
                                         <template x-if="field.type === 'qrcode'">
-                                            <div class="flex items-center justify-center bg-white border border-gray-300 p-1" :style="'width:' + field.width + 'px; height:' + field.height + 'px;'">
+                                            <div class="flex items-center justify-center border border-gray-300 p-1" :style="'width:' + field.width + 'px; height:' + field.height + 'px; background-color:' + (field.bg_transparent ? 'transparent' : field.bg_color) + ';'">
                                                 <span class="material-symbols-outlined text-gray-700" style="font-size: 32px;">qr_code</span>
                                             </div>
                                         </template>
@@ -285,6 +304,20 @@ $availableJson = json_encode($availableFields ?: []);
                                 </div>
                             </template>
 
+                            <!-- Barcode/QRCode Background Settings -->
+                            <template x-if="fields[selectedField]?.type === 'barcode' || fields[selectedField]?.type === 'qrcode'">
+                                <div class="flex flex-col gap-3">
+                                    <div class="flex items-center gap-2">
+                                        <input type="checkbox" x-model="fields[selectedField].bg_transparent" id="bg_transparent" class="rounded border-gray-300 text-primary focus:ring-primary">
+                                        <label for="bg_transparent" class="text-sm text-gray-700 dark:text-gray-300">Transparent Background</label>
+                                    </div>
+                                    <div x-show="!fields[selectedField]?.bg_transparent">
+                                        <label class="text-xs text-gray-500 block mb-1">Background Color</label>
+                                        <input type="color" x-model="fields[selectedField].bg_color" class="w-full h-9 rounded cursor-pointer">
+                                    </div>
+                                </div>
+                            </template>
+
                             <!-- Text Typography -->
                             <template x-if="fields[selectedField]?.type !== 'image' && fields[selectedField]?.type !== 'barcode' && fields[selectedField]?.type !== 'qrcode'">
                                 <div class="flex flex-col gap-3">
@@ -341,6 +374,8 @@ $availableJson = json_encode($availableFields ?: []);
                         <input type="hidden" :name="'settings[' + name + '][font_size]'" :value="field.font_size">
                         <input type="hidden" :name="'settings[' + name + '][font_color]'" :value="field.font_color">
                         <input type="hidden" :name="'settings[' + name + '][font_weight]'" :value="field.font_weight">
+                        <input type="hidden" :name="'settings[' + name + '][bg_transparent]'" :value="field.bg_transparent ? '1' : '0'">
+                        <input type="hidden" :name="'settings[' + name + '][bg_color]'" :value="field.bg_color">
                     </div>
                 </template>
             </div>

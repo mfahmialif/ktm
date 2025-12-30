@@ -256,6 +256,8 @@ class KtmGeneratorService
 
         $width = (int) ($settings['width'] ?? 200);
         $height = (int) ($settings['height'] ?? 50);
+        $bgTransparent = ($settings['bg_transparent'] ?? '1') === '1' || $settings['bg_transparent'] === true;
+        $bgColor = $settings['bg_color'] ?? '#ffffff';
 
         try {
             // Generate barcode PNG
@@ -269,6 +271,50 @@ class KtmGeneratorService
 
             // Resize to configured width while maintaining height
             $barcodeImage->resize($width, $height);
+
+            // Apply background color if not transparent
+            if (!$bgTransparent) {
+                // Create background image with the specified color
+                $bgHex = str_replace('#', '', $bgColor);
+                $r = hexdec(substr($bgHex, 0, 2));
+                $g = hexdec(substr($bgHex, 2, 2));
+                $b = hexdec(substr($bgHex, 4, 2));
+
+                $bgImage = imagecreatetruecolor($width, $height);
+                $backgroundColor = imagecolorallocate($bgImage, $r, $g, $b);
+                imagefill($bgImage, 0, 0, $backgroundColor);
+
+                // Get barcode as GD resource
+                $barcodeGd = imagecreatefromstring($barcodeData);
+                $barcodeWidth = imagesx($barcodeGd);
+                $barcodeHeight = imagesy($barcodeGd);
+
+                // Make white pixels in barcode transparent and copy black pixels
+                for ($px = 0; $px < $barcodeWidth; $px++) {
+                    for ($py = 0; $py < $barcodeHeight; $py++) {
+                        $color = imagecolorat($barcodeGd, $px, $py);
+                        $colors = imagecolorsforindex($barcodeGd, $color);
+                        // If pixel is black (barcode lines), copy it
+                        if ($colors['red'] < 128 && $colors['green'] < 128 && $colors['blue'] < 128) {
+                            // Scale coordinates to target size
+                            $targetX = (int) ($px * $width / $barcodeWidth);
+                            $targetY = (int) ($py * $height / $barcodeHeight);
+                            imagesetpixel($bgImage, $targetX, $targetY, imagecolorallocate($bgImage, 0, 0, 0));
+                        }
+                    }
+                }
+
+                imagedestroy($barcodeGd);
+
+                // Convert back to PNG
+                ob_start();
+                imagepng($bgImage);
+                $finalPng = ob_get_clean();
+                imagedestroy($bgImage);
+
+                $barcodeImage = Image::read($finalPng);
+                $barcodeImage->resize($width, $height);
+            }
 
             // Place barcode on template
             $image->place($barcodeImage, 'top-left', $x, $y);
@@ -290,6 +336,8 @@ class KtmGeneratorService
         }
 
         $size = (int) ($settings['width'] ?? 100);
+        $bgTransparent = ($settings['bg_transparent'] ?? '1') === '1' || $settings['bg_transparent'] === true;
+        $bgColor = $settings['bg_color'] ?? '#ffffff';
 
         try {
             // Generate QR code using chillerlan/php-qrcode
@@ -316,11 +364,19 @@ class KtmGeneratorService
             imagealphablending($dstImage, false);
             imagesavealpha($dstImage, true);
 
-            // Create transparent color
-            $transparent = imagecolorallocatealpha($dstImage, 0, 0, 0, 127);
-            imagefill($dstImage, 0, 0, $transparent);
+            // Set background color or transparent
+            if ($bgTransparent) {
+                $background = imagecolorallocatealpha($dstImage, 0, 0, 0, 127);
+            } else {
+                $bgHex = str_replace('#', '', $bgColor);
+                $bgR = hexdec(substr($bgHex, 0, 2));
+                $bgG = hexdec(substr($bgHex, 2, 2));
+                $bgB = hexdec(substr($bgHex, 4, 2));
+                $background = imagecolorallocate($dstImage, $bgR, $bgG, $bgB);
+            }
+            imagefill($dstImage, 0, 0, $background);
 
-            // Copy pixels, making white transparent
+            // Copy pixels
             for ($px = 0; $px < $width; $px++) {
                 for ($py = 0; $py < $height; $py++) {
                     $color = imagecolorat($srcImage, $px, $py);
@@ -328,12 +384,16 @@ class KtmGeneratorService
                     $g = ($color >> 8) & 0xFF;
                     $b = $color & 0xFF;
 
-                    // If pixel is white or near-white, make it transparent
+                    // If pixel is white or near-white, use background
                     if ($r > 250 && $g > 250 && $b > 250) {
-                        imagesetpixel($dstImage, $px, $py, $transparent);
+                        // Already filled with background, skip
                     } else {
                         // Keep the original color (black QR code pixels)
-                        $newColor = imagecolorallocatealpha($dstImage, $r, $g, $b, 0);
+                        if ($bgTransparent) {
+                            $newColor = imagecolorallocatealpha($dstImage, $r, $g, $b, 0);
+                        } else {
+                            $newColor = imagecolorallocate($dstImage, $r, $g, $b);
+                        }
                         imagesetpixel($dstImage, $px, $py, $newColor);
                     }
                 }
@@ -344,11 +404,11 @@ class KtmGeneratorService
             // Convert back to PNG string
             ob_start();
             imagepng($dstImage);
-            $transparentPng = ob_get_clean();
+            $finalPng = ob_get_clean();
             imagedestroy($dstImage);
 
-            // Create Intervention Image from transparent PNG
-            $qrCodeImage = Image::read($transparentPng);
+            // Create Intervention Image from PNG
+            $qrCodeImage = Image::read($finalPng);
 
             // Scale to exact configured size
             $qrCodeImage->scale($size, $size);
