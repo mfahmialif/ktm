@@ -159,6 +159,35 @@ $availableJson = json_encode($availableFields ?: []);
                         this.selectedField = this.fieldToAdd;
                         this.fieldToAdd = '';
                     },
+
+                    addCustomTextField() {
+                        let maxY = 80;
+                        for (let k in this.fields) { if (this.fields[k].y > maxY) maxY = this.fields[k].y; }
+                        
+                        // Generate unique ID for custom text
+                        let count = 1;
+                        while (this.hasField('custom_text_' + count)) {
+                            count++;
+                        }
+                        const fieldName = 'custom_text_' + count;
+                        
+                        this.fields[fieldName] = {
+                            label: 'Custom Text ' + count,
+                            type: 'custom_text',
+                            x: 180,
+                            y: maxY + 35,
+                            width: 200, // Not strictly used for text but good for initial placement logic if needed
+                            height: 30,
+                            font_family: 'Lexend',
+                            font_size: 14,
+                            font_color: '#111418',
+                            font_weight: 'normal',
+                            text_align: 'left',
+                            line_height: 1.2,
+                            text_content: 'Teks Contoh\nBaris Kedua'
+                        };
+                        this.selectedField = fieldName;
+                    },
                     
                     removeField(name) {
                         delete this.fields[name];
@@ -206,7 +235,13 @@ $availableJson = json_encode($availableFields ?: []);
 
                                 <!-- Fields Preview -->
                                 <template x-for="(field, name) in fields" :key="name">
-                                    <div class="absolute field-item border-2 border-dashed" :class="selectedField === name ? 'border-primary bg-primary/5' : 'border-transparent hover:border-gray-400'" :style="'left:' + field.x + 'px; top:' + field.y + 'px;' + (field.type === 'image' ? 'width:' + field.width + 'px; height:' + field.height + 'px;' : '')" @click="selectField(name)">
+                                    <div class="absolute field-item border-2 border-dashed" 
+                                         :class="selectedField === name ? 'border-primary bg-primary/5' : 'border-transparent hover:border-gray-400'" 
+                                         :style="'left:' + field.x + 'px; top:' + field.y + 'px;' + 
+                                                 (field.type === 'image' || field.type === 'barcode' || field.type === 'qrcode' ? 'width:' + field.width + 'px; height:' + field.height + 'px;' : '') +
+                                                 (field.type !== 'image' && field.type !== 'barcode' && field.type !== 'qrcode' && field.text_align === 'center' ? 'transform: translateX(-50%);' : '') +
+                                                 (field.type !== 'image' && field.type !== 'barcode' && field.type !== 'qrcode' && field.text_align === 'right' ? 'transform: translateX(-100%);' : '')" 
+                                         @click="selectField(name)">
                                         <template x-if="field.type === 'image'">
                                             <div class="w-full h-full flex items-center justify-center bg-black/10 border border-gray-300">
                                                 <span class="material-symbols-outlined text-gray-500 text-3xl">person</span>
@@ -224,7 +259,9 @@ $availableJson = json_encode($availableFields ?: []);
                                             </div>
                                         </template>
                                         <template x-if="field.type !== 'image' && field.type !== 'barcode' && field.type !== 'qrcode'">
-                                            <p class="whitespace-nowrap leading-none" :style="'font-family:' + field.font_family + ',sans-serif; font-size:' + field.font_size + 'px; color:' + field.font_color + '; font-weight:' + field.font_weight" x-text="getSample(name)"></p>
+                                            <p class="whitespace-pre-line leading-normal" 
+                                               :style="'font-family:' + field.font_family + ',sans-serif; font-size:' + field.font_size + 'px; color:' + field.font_color + '; font-weight:' + field.font_weight + '; text-align:' + (field.text_align || 'left') + '; line-height:' + (field.line_height || 1.2)" 
+                                               x-text="field.type === 'custom_text' ? field.text_content : getSample(name)"></p>
                                         </template>
                                     </div>
                                 </template>
@@ -238,15 +275,21 @@ $availableJson = json_encode($availableFields ?: []);
                     <!-- Add Field -->
                     <div class="bg-white dark:bg-[#1a2632] rounded-xl shadow-sm border border-[#e5e7eb] dark:border-gray-800 p-5">
                         <h3 class="text-[#111418] dark:text-white text-lg font-bold mb-4">Add Field</h3>
-                        <div class="flex gap-2">
-                            <select x-model="fieldToAdd" class="flex-1 h-10 bg-[#f6f7f8] dark:bg-gray-800 border-none rounded-lg px-3 text-sm">
-                                <option value="">-- Pilih Field --</option>
-                                <template x-for="f in availableFields" :key="f.column">
-                                    <option :value="f.column" :disabled="hasField(f.column)" x-text="f.label + ' (' + f.type + ')'"></option>
-                                </template>
-                            </select>
-                            <button type="button" @click="addField()" class="h-10 px-4 bg-primary hover:bg-blue-600 rounded-lg text-white text-sm font-medium">
-                                <span class="material-symbols-outlined text-[18px]">add</span>
+                        <div class="flex flex-col gap-3">
+                            <div class="flex gap-2">
+                                <select x-model="fieldToAdd" class="flex-1 h-10 bg-[#f6f7f8] dark:bg-gray-800 border-none rounded-lg px-3 text-sm">
+                                    <option value="">-- Pilih Field --</option>
+                                    <template x-for="f in availableFields" :key="f.column">
+                                        <option :value="f.column" :disabled="hasField(f.column)" x-text="f.label + ' (' + f.type + ')'"></option>
+                                    </template>
+                                </select>
+                                <button type="button" @click="addField()" class="h-10 px-4 bg-primary hover:bg-blue-600 rounded-lg text-white text-sm font-medium">
+                                    <span class="material-symbols-outlined text-[18px]">add</span>
+                                </button>
+                            </div>
+                            <button type="button" @click="addCustomTextField()" class="w-full h-10 flex items-center justify-center gap-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 transition-colors">
+                                <span class="material-symbols-outlined text-[18px]">edit_note</span>
+                                Add Custom Text
                             </button>
                         </div>
                     </div>
@@ -261,7 +304,7 @@ $availableJson = json_encode($availableFields ?: []);
                             <template x-for="(field, name) in fields" :key="name">
                                 <div class="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer" :class="selectedField === name ? 'bg-primary/10 ring-1 ring-primary/30' : ''" @click="selectField(name)">
                                     <div class="flex items-center gap-2">
-                                        <span class="material-symbols-outlined text-[18px] text-gray-500" x-text="field.type === 'image' ? 'image' : (field.type === 'barcode' ? 'barcode' : (field.type === 'qrcode' ? 'qr_code' : 'text_fields'))"></span>
+                                        <span class="material-symbols-outlined text-[18px] text-gray-500" x-text="field.type === 'image' ? 'image' : (field.type === 'barcode' ? 'barcode' : (field.type === 'qrcode' ? 'qr_code' : (field.type === 'custom_text' ? 'edit_note' : 'text_fields')))"></span>
                                         <span class="text-sm font-medium" x-text="field.label"></span>
                                     </div>
                                     <button type="button" @click.stop="removeField(name)" class="p-1 text-red-500 hover:bg-red-50 rounded">
@@ -314,6 +357,34 @@ $availableJson = json_encode($availableFields ?: []);
                                     <div x-show="!fields[selectedField]?.bg_transparent">
                                         <label class="text-xs text-gray-500 block mb-1">Background Color</label>
                                         <input type="color" x-model="fields[selectedField].bg_color" class="w-full h-9 rounded cursor-pointer">
+                                    </div>
+                                </div>
+                            </template>
+
+                            <!-- Custom Text Content & Alignment -->
+                            <template x-if="fields[selectedField]?.type === 'custom_text'">
+                                <div class="flex flex-col gap-3">
+                                    <div>
+                                        <label class="text-xs text-gray-500 block mb-1">Text Content</label>
+                                        <textarea x-model="fields[selectedField].text_content" class="w-full bg-[#f6f7f8] dark:bg-gray-800 rounded px-3 py-2 text-sm" rows="3" placeholder="Masukkan teks..."></textarea>
+                                    </div>
+                                    <div>
+                                        <label class="text-xs text-gray-500 block mb-1">Alignment</label>
+                                        <div class="flex bg-[#f6f7f8] dark:bg-gray-800 rounded p-1">
+                                            <button type="button" @click="fields[selectedField].text_align = 'left'" class="flex-1 py-1 rounded text-gray-500 hover:text-gray-900 dark:hover:text-white" :class="fields[selectedField].text_align === 'left' ? 'bg-white shadow-sm text-primary' : ''">
+                                                <span class="material-symbols-outlined text-[18px]">format_align_left</span>
+                                            </button>
+                                            <button type="button" @click="fields[selectedField].text_align = 'center'" class="flex-1 py-1 rounded text-gray-500 hover:text-gray-900 dark:hover:text-white" :class="fields[selectedField].text_align === 'center' ? 'bg-white shadow-sm text-primary' : ''">
+                                                <span class="material-symbols-outlined text-[18px]">format_align_center</span>
+                                            </button>
+                                            <button type="button" @click="fields[selectedField].text_align = 'right'" class="flex-1 py-1 rounded text-gray-500 hover:text-gray-900 dark:hover:text-white" :class="fields[selectedField].text_align === 'right' ? 'bg-white shadow-sm text-primary' : ''">
+                                                <span class="material-symbols-outlined text-[18px]">format_align_right</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <div>
+                                        <label class="text-xs text-gray-500 block mb-1">Line Spacing (Line Height)</label>
+                                        <input type="number" step="0.1" x-model.number="fields[selectedField].line_height" class="w-full bg-[#f6f7f8] dark:bg-gray-800 rounded px-3 py-2 text-sm">
                                     </div>
                                 </div>
                             </template>
@@ -376,6 +447,9 @@ $availableJson = json_encode($availableFields ?: []);
                         <input type="hidden" :name="'settings[' + name + '][font_weight]'" :value="field.font_weight">
                         <input type="hidden" :name="'settings[' + name + '][bg_transparent]'" :value="field.bg_transparent ? '1' : '0'">
                         <input type="hidden" :name="'settings[' + name + '][bg_color]'" :value="field.bg_color">
+                        <input type="hidden" :name="'settings[' + name + '][text_content]'" :value="field.text_content">
+                        <input type="hidden" :name="'settings[' + name + '][text_align]'" :value="field.text_align">
+                        <input type="hidden" :name="'settings[' + name + '][line_height]'" :value="field.line_height">
                     </div>
                 </template>
             </div>

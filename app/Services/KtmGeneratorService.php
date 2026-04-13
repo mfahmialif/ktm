@@ -101,6 +101,11 @@ class KtmGeneratorService
             } elseif ($type === 'qrcode') {
                 // Generate QR code with student's NIM
                 $this->overlayQrCode($image, $student->nim, $x, $y, $fieldSettings);
+            } elseif ($type === 'custom_text') {
+                // Use custom text content
+                $text = $fieldSettings['text_content'] ?? '';
+                if ($text === '') continue;
+                $this->overlayText($image, $text, $x, $y, $fieldSettings);
             } else {
                 // Get text value
                 $value = $this->getStudentFieldValue($student, $fieldName);
@@ -191,18 +196,19 @@ class KtmGeneratorService
         $fontSize = (int) ($settings['font_size'] ?? 14);
         $fontColor = $settings['font_color'] ?? '#000000';
         $fontWeight = $settings['font_weight'] ?? 'normal';
+        $align = $settings['text_align'] ?? 'left';
+        $lineHeight = (float) ($settings['line_height'] ?? 1.2);
 
         // Map font family to font file path (with weight support)
         $fontPath = $this->getFontPath($fontFamily, $fontWeight);
 
-        // Add font size to Y to simulate top-left positioning
-        // Intervention Image positions text by baseline, CSS positions by top
-        $adjustedY = $y + $fontSize;
-
-        $image->text($text, $x, $adjustedY, function (FontFactory $font) use ($fontPath, $fontSize, $fontColor) {
+        $image->text($text, $x, $y, function (FontFactory $font) use ($fontPath, $fontSize, $fontColor, $align, $lineHeight) {
             $font->filename($fontPath);
             $font->size($fontSize);
             $font->color($fontColor);
+            $font->align($align);
+            $font->valign('top');
+            $font->lineHeight($lineHeight);
         });
     }
 

@@ -245,6 +245,8 @@ class KtmTemplateController extends Controller
             'settings.*.text_align' => 'nullable|string|in:left,center,right',
             'settings.*.bg_transparent' => 'nullable|string',
             'settings.*.bg_color' => 'nullable|string',
+            'settings.*.text_content' => 'nullable|string',
+            'settings.*.line_height' => 'nullable|numeric',
         ]);
 
         $ktmTemplate->update([
